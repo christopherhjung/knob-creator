@@ -13,6 +13,20 @@ const GERMAN = {
   'Anycubic i3 Mega · {n} mm nozzle · {n} mm filament': 'Anycubic i3 Mega · {n} mm Düse · {n} mm Filament',
   '{n} triangles · {n} cm³': '{n} Dreiecke · {n} cm³',
 
+  // Saved configurations
+  Configurations: 'Konfigurationen',
+  'Saved in this browser only.': 'Wird nur in diesem Browser gespeichert.',
+  'Configuration name': 'Name der Konfiguration',
+  'No saved configurations yet.': 'Noch keine gespeicherten Konfigurationen.',
+  Save: 'Speichern',
+  Load: 'Laden',
+  Delete: 'Löschen',
+  'Saved.': 'Gespeichert.',
+  'Loaded.': 'Geladen.',
+  'Could not save in this browser.': 'Speichern ist in diesem Browser nicht möglich.',
+  'Delete this configuration?': 'Diese Konfiguration löschen?',
+  'Replace the saved configuration with this name?': 'Gespeicherte Konfiguration mit diesem Namen ersetzen?',
+
   // Model settings
   Stud: 'Zapfen',
   Diameter: 'Durchmesser',

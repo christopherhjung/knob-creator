@@ -33,6 +33,7 @@
     <div role="tablist" data-i18n-label="Sections">
       <button type="button" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="true" data-i18n="Model">Model</button>
       <button type="button" role="tab" id="tab-slicer" aria-controls="panel-slicer" aria-selected="false" data-i18n="Slicer">Slicer</button>
+      <button type="button" role="tab" id="tab-configs" aria-controls="panel-configs" aria-selected="false" data-i18n="Configurations"></button>
     </div>
 
     <section id="panel-model" role="tabpanel" aria-labelledby="tab-model">
@@ -46,6 +47,17 @@
       <p class="hint" data-i18n="Anycubic i3 Mega · 0.4 mm nozzle · 1.75 mm filament"></p>
       <form id="slicer-controls"></form>
       <p id="slicer-layout" aria-live="polite"></p>
+    </section>
+
+    <section id="panel-configs" role="tabpanel" aria-labelledby="tab-configs" hidden>
+      <p class="hint" data-i18n="Saved in this browser only."></p>
+      <form id="config-form">
+        <input id="config-name" required maxlength="60" autocomplete="off" data-i18n-label="Configuration name">
+        <button type="submit" data-i18n="Save"></button>
+      </form>
+      <p id="config-status" aria-live="polite"></p>
+      <p id="config-empty" data-i18n="No saved configurations yet."></p>
+      <ul id="config-list"></ul>
     </section>
   </aside>
 </body>

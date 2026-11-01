@@ -77,6 +77,24 @@ aside {
 }
 [role='tab'][aria-selected='true'] { background: var(--line); color: var(--text); }
 
+#config-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 12px; }
+#config-form button { width: auto; padding: 6px 12px; }
+#config-name { min-width: 0; padding: 6px; }
+#config-status:empty { display: none; }
+#config-status, #config-empty { margin: 0 0 12px; color: var(--muted); }
+#config-list { margin: 0; padding: 0; list-style: none; }
+#config-list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 2px 6px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+#config-list strong { min-width: 0; overflow-wrap: anywhere; }
+#config-list small { grid-row: 2; color: var(--muted); }
+#config-list button { grid-row: 1 / span 2; width: auto; padding: 6px 10px; }
+
 progress { width: 120px; accent-color: var(--accent); }
 .hint { margin: 0 0 16px; color: var(--muted); }
 
@@ -101,6 +119,7 @@ legend { padding: 0 6px; font-weight: 600; }
 .row select { width: 100%; }
 #language { padding: 7px 4px; }
 #language,
+#config-name,
 .row input[type='number'],
 .row select {
   padding: 2px 4px;

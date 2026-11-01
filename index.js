@@ -1,3 +1,4 @@
+import { createConfigsPanel } from './src/configs-panel.js';
 import { createControls } from './src/controls.js';
 import { downloadFile } from './src/download.js';
 import { getLanguage, onLanguageChange, setLanguage, t } from './src/i18n.js';
@@ -13,7 +14,7 @@ const downloadButton = document.querySelector('#download');
 const viewer = createViewer(document.querySelector('#viewer'));
 const values = defaultValues();
 let framedNut;
-const refreshSlicer = createSlicerPanel(() => viewer.toStl(), () => knobFootprint(values));
+const slicer = createSlicerPanel(() => viewer.toStl(), () => knobFootprint(values));
 
 function update() {
   const knob = buildKnob(values);
@@ -31,7 +32,7 @@ function update() {
     ...knob.warnings.map((text) => Object.assign(document.createElement('li'), { textContent: t(text) })),
   );
   downloadButton.disabled = triangles === 0;
-  refreshSlicer();
+  slicer.refresh();
 }
 
 function showTab(selected) {
@@ -46,6 +47,7 @@ function renderText() {
   for (const element of document.querySelectorAll('[data-i18n]')) element.textContent = t(element.dataset.i18n);
   for (const element of document.querySelectorAll('[data-i18n-label]')) {
     element.setAttribute('aria-label', t(element.dataset.i18nLabel));
+    if ('placeholder' in element) element.placeholder = t(element.dataset.i18nLabel);
   }
   createControls(document.querySelector('#controls'), PARAMS, values, update);
 }
@@ -56,6 +58,13 @@ languageSelect.addEventListener('change', () => setLanguage(languageSelect.value
 onLanguageChange(() => {
   renderText();
   update();
+});
+
+createConfigsPanel(values, slicer.values, () => {
+  renderText();
+  slicer.render();
+  update();
+  viewer.frame();
 });
 
 renderText();

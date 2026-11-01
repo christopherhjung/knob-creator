@@ -8,7 +8,8 @@ import { bedLayout, defaultSlicerValues, SLICER_PARAMS } from './slicer-settings
  * Wires up the Slicer tab.
  * @param {() => DataView} getStl returns the current knob as binary STL
  * @param {() => number[]} getFootprint returns the width and depth of the current knob
- * @returns {() => void} call when the knob changes
+ * @returns {{values: object, refresh: () => void, render: () => void}} the slicer values,
+ *   `refresh` for when the knob changes and `render` for when `values` were replaced
  */
 export function createSlicerPanel(getStl, getFootprint) {
   const status = document.querySelector('#slicer-status');
@@ -64,5 +65,12 @@ export function createSlicerPanel(getStl, getFootprint) {
     }
   });
 
-  return refreshLayout;
+  return {
+    values,
+    refresh: refreshLayout,
+    render() {
+      renderControls();
+      refreshLayout();
+    },
+  };
 }
