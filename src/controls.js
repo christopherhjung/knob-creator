@@ -1,9 +1,12 @@
+import { t } from './i18n.js';
+
 /**
  * Renders one row per parameter into `form`: a dropdown if it has `options`,
  * otherwise a slider + number box.
  * Calls onChange(values) whenever a value changes.
  */
 export function createControls(form, params, values, onChange) {
+  form.replaceChildren(); // also re-renders the labels after a language change
   const groups = new Map();
   const refreshers = [];
   const refreshAll = () => refreshers.forEach((refresh) => refresh());
@@ -11,7 +14,7 @@ export function createControls(form, params, values, onChange) {
   for (const param of params) {
     if (!groups.has(param.group)) {
       const fieldset = document.createElement('fieldset');
-      fieldset.append(Object.assign(document.createElement('legend'), { textContent: param.group }));
+      fieldset.append(Object.assign(document.createElement('legend'), { textContent: t(param.group) }));
       groups.set(param.group, fieldset);
       form.append(fieldset);
     }
@@ -26,7 +29,7 @@ const display = (value) => Math.round(value * 100) / 100;
 function createSelectRow({ key, label, options, apply }, values, onChange, refreshers, refreshAll) {
   const parse = typeof options[0].value === 'number' ? Number : String;
   const select = Object.assign(document.createElement('select'), { id: key });
-  select.append(...options.map((option) => new Option(option.label, option.value)));
+  select.append(...options.map((option) => new Option(t(option.label), option.value)));
   select.value = values[key];
   select.addEventListener('change', () => {
     if (apply) apply(values, parse(select.value));
@@ -44,7 +47,7 @@ function createRow({ key, label, unit = 'mm', min, max, step }, values, onChange
   const number = Object.assign(document.createElement('input'), {
     type: 'number', min, max, step, value: display(values[key]),
   });
-  number.setAttribute('aria-label', `${label} in ${unit}`);
+  number.setAttribute('aria-label', `${t(label)} in ${t(unit)}`);
 
   const set = (value) => {
     values[key] = value;
@@ -80,7 +83,7 @@ function wrapRow(key, label, ...inputs) {
   const row = document.createElement('div');
   row.className = 'row';
   row.append(
-    Object.assign(document.createElement('label'), { htmlFor: key, textContent: label }),
+    Object.assign(document.createElement('label'), { htmlFor: key, textContent: t(label) }),
     ...inputs,
   );
   return row;

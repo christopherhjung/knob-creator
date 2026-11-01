@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,25 +21,29 @@
     <h1>KnobCreator</h1>
     <p id="slicer-status" aria-live="polite"></p>
     <progress id="slicer-progress" max="100" hidden></progress>
-    <button id="download" class="secondary" type="button">Download STL</button>
-    <button id="slice" type="button">Slice &amp; download G-code</button>
+    <select id="language" data-i18n-label="Language">
+      <option value="de">Deutsch</option>
+      <option value="en">English</option>
+    </select>
+    <button id="download" class="secondary" type="button" data-i18n="Download STL"></button>
+    <button id="slice" type="button" data-i18n="Slice &amp; download G-code"></button>
   </header>
   <main id="viewer"></main>
   <aside>
-    <div role="tablist" aria-label="Sections">
-      <button type="button" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="true">Model</button>
-      <button type="button" role="tab" id="tab-slicer" aria-controls="panel-slicer" aria-selected="false">Slicer</button>
+    <div role="tablist" data-i18n-label="Sections">
+      <button type="button" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="true" data-i18n="Model">Model</button>
+      <button type="button" role="tab" id="tab-slicer" aria-controls="panel-slicer" aria-selected="false" data-i18n="Slicer">Slicer</button>
     </div>
 
     <section id="panel-model" role="tabpanel" aria-labelledby="tab-model">
-      <p class="hint">Dimensions in mm</p>
+      <p class="hint" data-i18n="Dimensions in mm"></p>
       <form id="controls"></form>
       <ul id="warnings" aria-live="polite"></ul>
       <p id="stats"></p>
     </section>
 
     <section id="panel-slicer" role="tabpanel" aria-labelledby="tab-slicer" hidden>
-      <p class="hint">Anycubic i3 Mega · 0.4 mm nozzle · 1.75 mm filament</p>
+      <p class="hint" data-i18n="Anycubic i3 Mega · 0.4 mm nozzle · 1.75 mm filament"></p>
       <form id="slicer-controls"></form>
       <p id="slicer-layout" aria-live="polite"></p>
     </section>

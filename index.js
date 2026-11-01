@@ -1,5 +1,6 @@
 import { createControls } from './src/controls.js';
 import { downloadFile } from './src/download.js';
+import { getLanguage, onLanguageChange, setLanguage, t } from './src/i18n.js';
 import { buildKnob } from './src/knob.js';
 import { defaultValues, knobFootprint, PARAMS } from './src/params.js';
 import { createSlicerPanel } from './src/slicer-panel.js';
@@ -25,9 +26,9 @@ function update() {
   }
 
   const triangles = knob.indices.length / 3;
-  stats.textContent = `${triangles.toLocaleString()} triangles · ${(knob.volume / 1000).toFixed(1)} cm³`;
+  stats.textContent = t(`${triangles} triangles · ${(knob.volume / 1000).toFixed(1)} cm³`);
   warningList.replaceChildren(
-    ...knob.warnings.map((text) => Object.assign(document.createElement('li'), { textContent: text })),
+    ...knob.warnings.map((text) => Object.assign(document.createElement('li'), { textContent: t(text) })),
   );
   downloadButton.disabled = triangles === 0;
   refreshSlicer();
@@ -40,7 +41,24 @@ function showTab(selected) {
   }
 }
 
-createControls(document.querySelector('#controls'), PARAMS, values, update);
+function renderText() {
+  document.documentElement.lang = getLanguage();
+  for (const element of document.querySelectorAll('[data-i18n]')) element.textContent = t(element.dataset.i18n);
+  for (const element of document.querySelectorAll('[data-i18n-label]')) {
+    element.setAttribute('aria-label', t(element.dataset.i18nLabel));
+  }
+  createControls(document.querySelector('#controls'), PARAMS, values, update);
+}
+
+const languageSelect = document.querySelector('#language');
+languageSelect.value = getLanguage();
+languageSelect.addEventListener('change', () => setLanguage(languageSelect.value));
+onLanguageChange(() => {
+  renderText();
+  update();
+});
+
+renderText();
 downloadButton.addEventListener('click', () => downloadFile(viewer.toStl(), 'knob.stl', 'model/stl'));
 document.querySelectorAll('[role="tab"]').forEach((tab) => tab.addEventListener('click', () => showTab(tab)));
 update();

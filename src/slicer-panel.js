@@ -1,5 +1,6 @@
 import { createControls } from './controls.js';
 import { downloadFile } from './download.js';
+import { onLanguageChange, t } from './i18n.js';
 import { sliceStl } from './slicer.js';
 import { bedLayout, defaultSlicerValues, SLICER_PARAMS } from './slicer-settings.js';
 
@@ -19,21 +20,29 @@ export function createSlicerPanel(getStl, getFootprint) {
 
   function refreshLayout() {
     const layout = bedLayout(values, getFootprint());
-    layoutText.textContent = layout.fits
+    layoutText.textContent = t(layout.fits
       ? `${layout.cols} × ${layout.rows} grid, ${layout.width.toFixed(1)} × ${layout.depth.toFixed(1)} mm`
-      : `Too many knobs: ${layout.capacity} fit on the bed at this size and gap.`;
+      : `Too many knobs: ${layout.capacity} fit on the bed at this size and gap.`);
     button.disabled = slicing || !layout.fits;
     button.title = layout.fits ? '' : layoutText.textContent; // the button stays visible on every tab
   }
 
-  createControls(document.querySelector('#slicer-controls'), SLICER_PARAMS, values, refreshLayout);
+  const renderControls = () =>
+    createControls(document.querySelector('#slicer-controls'), SLICER_PARAMS, values, refreshLayout);
+  renderControls();
+  onLanguageChange(() => {
+    renderControls();
+    status.textContent = '';
+    status.title = '';
+    refreshLayout();
+  });
 
   button.addEventListener('click', async () => {
     slicing = true;
     button.disabled = true;
     progress.hidden = false;
     progress.value = 0;
-    status.textContent = 'Slicing…';
+    status.textContent = t('Slicing…');
     status.title = '';
 
     try {
@@ -44,10 +53,10 @@ export function createSlicerPanel(getStl, getFootprint) {
 
       downloadFile(gcode, 'knob.gcode', 'text/x-gcode');
       const layers = /;LAYER_COUNT:(\d+)/.exec(new TextDecoder().decode(gcode.subarray(0, 8192)));
-      status.textContent = layers ? `Done: ${layers[1]} layers.` : 'Done.';
+      status.textContent = t(layers ? `Done: ${layers[1]} layers.` : 'Done.');
     } catch (error) {
-      status.textContent = error.message;
-      status.title = error.message; // the header cuts long messages off
+      status.textContent = t(error.message);
+      status.title = status.textContent; // the header cuts long messages off
     } finally {
       slicing = false;
       refreshLayout();

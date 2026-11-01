@@ -98,8 +98,11 @@ legend { padding: 0 6px; font-weight: 600; }
 .row input[type='range'] { grid-column: 1 / -1; width: 100%; margin: 0; accent-color: var(--accent); }
 .row:has(select) { grid-template-columns: 1fr 130px; }
 .row input[type='number'],
+.row select { width: 100%; }
+#language { padding: 7px 4px; }
+#language,
+.row input[type='number'],
 .row select {
-  width: 100%;
   padding: 2px 4px;
   background: var(--bg);
   color: inherit;
