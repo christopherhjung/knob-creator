@@ -19,8 +19,8 @@ test('changing nut scales dimensions by the thread ratio and sets the bore', () 
   assert.equal(values.boreDiameter, 9);
   assert.equal(values.studDiameter, 16);
   assert.equal(values.bodyHeight, 20 * (8 / 6));
-  assert.equal(values.pocketFloor, 20);
-  assert.equal(values.nutClearance, 0.3); // depends on the printer, not the thread
+  assert.equal(values.pocketFloor, 5 * (8 / 6));
+  assert.equal(values.nutClearance, 0.1); // depends on the printer, not the thread
 });
 
 test('extra hole diameter follows the thread, its percentage position does not', () => {
@@ -32,10 +32,10 @@ test('extra hole diameter follows the thread, its percentage position does not',
 });
 
 test('user changes carry over, and no bore stays no bore', () => {
-  const values = { ...defaultValues(), bodyLength: 60, boreDiameter: 0 };
+  const values = { ...defaultValues(), bodyLength: 80, boreDiameter: 0 };
   selectNut(values, 18); // M6 to M12
 
-  assert.equal(values.bodyLength, 100); // 120 capped at the slider maximum
+  assert.equal(values.bodyLength, 150); // 160 capped at the slider maximum
   assert.equal(values.bodyWidth, 56);
   assert.equal(values.boreDiameter, 0);
 });

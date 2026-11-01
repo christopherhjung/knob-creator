@@ -19,16 +19,16 @@ export const PARAMS = [
   { group: 'Stud', key: 'studHeight', label: 'Height', min: 1, max: 40, step: 0.5, value: 2, scales: true },
   { group: 'Stud', key: 'boreDiameter', label: 'Bolt bore (0 = none)', min: 0, max: 20, step: 0.1, value: 6.6 },
 
-  { group: 'Oval body', key: 'bodyLength', label: 'Length', min: 10, max: 100, step: 0.5, value: 40, scales: true },
+  { group: 'Oval body', key: 'bodyLength', label: 'Length', min: 10, max: 150, step: 0.5, value: 60, scales: true },
   { group: 'Oval body', key: 'bodyWidth', label: 'Width', min: 10, max: 100, step: 0.5, value: 28, scales: true },
   { group: 'Oval body', key: 'bodyHeight', label: 'Height', min: 5, max: 60, step: 0.5, value: 20, scales: true },
   { group: 'Oval body', key: 'topRounding', label: 'Top edge rounding', min: 0, max: 30, step: 0.1, value: 3, scales: true },
 
   { group: 'Nut pocket', key: 'nutWidth', label: 'Nut size', value: 10, options: NUT_SIZES, apply: selectNut },
   // Measured up from the bottom face of the oval to the bottom of the pocket.
-  { group: 'Nut pocket', key: 'pocketFloor', label: 'Floor thickness', min: 0, max: 60, step: 0.1, value: 15, scales: true },
+  { group: 'Nut pocket', key: 'pocketFloor', label: 'Floor thickness', min: 0, max: 60, step: 0.1, value: 5, scales: true },
   // Printed holes come out undersized; tune this for your printer.
-  { group: 'Nut pocket', key: 'nutClearance', label: 'Clearance', min: 0, max: 2, step: 0.05, value: 0.3 },
+  { group: 'Nut pocket', key: 'nutClearance', label: 'Clearance', min: 0, max: 2, step: 0.05, value: 0.1 },
 
   // Cut down to the same floor as the nut pocket.
   { group: 'Extra hole', key: 'holeDiameter', label: 'Diameter (0 = none)', min: 0, max: 30, step: 0.1, value: 0, scales: true },

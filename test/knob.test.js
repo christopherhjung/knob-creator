@@ -3,7 +3,9 @@ import { test } from 'node:test';
 import { buildKnob } from '../src/knob.js';
 import { defaultValues } from '../src/params.js';
 
-const knob = (overrides = {}) => buildKnob({ ...defaultValues(), ...overrides });
+// Fixed proportions, so geometry checks don't move when a default changes.
+const knob = (overrides = {}) =>
+  buildKnob({ ...defaultValues(), bodyLength: 40, nutClearance: 0.3, pocketFloor: 15, ...overrides });
 
 function extent(positions, axis) {
   const values = positions.filter((_, i) => i % 3 === axis);
@@ -14,10 +16,10 @@ const near = (actual, expected, tolerance = 0.01) =>
   assert.ok(Math.abs(actual - expected) < tolerance, `${actual} is not close to ${expected}`);
 
 test('defaults are clean and sized as requested', () => {
-  const { positions, warnings } = knob();
+  const { positions, warnings } = buildKnob(defaultValues());
   assert.deepEqual(warnings, []);
   assert.deepEqual(extent(positions, 2), [0, 22]);
-  near(extent(positions, 0)[1], 20);
+  near(extent(positions, 0)[1], 30);
   near(extent(positions, 1)[1], 14);
 });
 
