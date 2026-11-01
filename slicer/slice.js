@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 import * as THREE from 'three';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 import { buildKnob } from '../src/knob.js';
-import { defaultValues } from '../src/params.js';
-import { defaultSlicerValues, engineArguments } from '../src/slicer-settings.js';
+import { defaultValues, knobFootprint } from '../src/params.js';
+import { bedLayout, defaultSlicerValues, engineArguments } from '../src/slicer-settings.js';
 import createCuraEngine from './engine/curaengine.js';
 
 const DEFINITIONS = '/definitions';
@@ -45,7 +45,7 @@ export async function sliceKnob(knobValues = defaultValues(), slicerValues = def
     definition: `${DEFINITIONS}/anycubic_i3_mega.def.json`,
     model: '/knob.stl',
     output: '/knob.gcode',
-  }));
+  }, bedLayout(slicerValues, knobFootprint(knobValues)).positions));
   return engine.FS.readFile('/knob.gcode', { encoding: 'utf8' });
 }
 

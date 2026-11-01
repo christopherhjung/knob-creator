@@ -46,6 +46,10 @@ export const PARAMS = [
 export const defaultValues = () =>
   Object.fromEntries(PARAMS.map(({ key, value }) => [key, value]));
 
+/** Width and depth the knob takes up on the bed, in mm. */
+export const knobFootprint = ({ bodyLength, bodyWidth, studDiameter }) =>
+  [Math.max(bodyLength, studDiameter), Math.max(bodyWidth, studDiameter)];
+
 /**
  * Switches `values` to the nut with the given width across flats: the bore moves
  * to that thread's clearance hole (0 stays "no bore") and every `scales` dimension

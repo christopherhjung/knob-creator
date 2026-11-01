@@ -1,7 +1,7 @@
 import { createControls } from './src/controls.js';
 import { downloadFile } from './src/download.js';
 import { buildKnob } from './src/knob.js';
-import { defaultValues, PARAMS } from './src/params.js';
+import { defaultValues, knobFootprint, PARAMS } from './src/params.js';
 import { createSlicerPanel } from './src/slicer-panel.js';
 import { createViewer } from './src/viewer.js';
 
@@ -41,5 +41,5 @@ function showTab(selected) {
 createControls(document.querySelector('#controls'), PARAMS, values, update);
 downloadButton.addEventListener('click', () => downloadFile(viewer.toStl(), 'knob.stl', 'model/stl'));
 document.querySelectorAll('[role="tab"]').forEach((tab) => tab.addEventListener('click', () => showTab(tab)));
-createSlicerPanel(() => viewer.toStl());
+createSlicerPanel(() => viewer.toStl(), () => knobFootprint(values));
 update();

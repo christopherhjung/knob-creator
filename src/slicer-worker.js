@@ -26,7 +26,8 @@ self.onmessage = async ({ data: { stl, args } }) => {
       print: () => {},
       printErr: (line) => {
         const progress = /^Progress:.*?([\d.]+)%\s*$/.exec(line);
-        if (progress) self.postMessage({ progress: Number(progress[1]) });
+        // The engine prints a 0 to 1 fraction, despite the % sign.
+        if (progress) self.postMessage({ progress: Number(progress[1]) * 100 });
         else log.push(line);
       },
       preRun: [(module) => { module.ENV.CURA_ENGINE_SEARCH_PATH = DEFINITIONS_DIR; }],

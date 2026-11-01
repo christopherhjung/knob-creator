@@ -81,7 +81,7 @@ legend { padding: 0 6px; font-weight: 600; }
 
 #warnings { margin: 0 0 12px; padding-left: 18px; color: var(--warn); }
 #warnings:empty { display: none; }
-#stats, #slicer-status { margin: 0 0 12px; color: var(--muted); }
+#stats, #slicer-layout, #slicer-status { margin: 0 0 12px; color: var(--muted); }
 
 button {
   width: 100%;

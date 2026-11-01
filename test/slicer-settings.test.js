@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
-  defaultSlicerValues, engineArguments, SLICER_PARAMS, toEngineSettings,
+  bedLayout, defaultSlicerValues, engineArguments, SLICER_PARAMS, toEngineSettings,
 } from '../src/slicer-settings.js';
 
 const settings = (overrides = {}) => toEngineSettings({ ...defaultSlicerValues(), ...overrides });
@@ -111,11 +111,67 @@ test('slider limits stay inside what the printer can do', () => {
   assert.ok(max('bedTemp') <= 100);
 });
 
+const FOOTPRINT = [60, 28];
+const layoutOf = (overrides) => bedLayout({ ...defaultSlicerValues(), ...overrides }, FOOTPRINT);
+
+test('one knob sits in the middle of the bed', () => {
+  assert.deepEqual(layoutOf({ copies: 1 }).positions, [[0, 0]]);
+});
+
+test('grid is compact, evenly spaced and centred', () => {
+  const { cols, rows, width, depth, positions } = layoutOf({ copies: 4, copyGap: 5 });
+  assert.deepEqual([cols, rows, width, depth], [2, 2, 125, 61]);
+  assert.deepEqual(positions, [[-32.5, -16.5], [32.5, -16.5], [-32.5, 16.5], [32.5, 16.5]]);
+});
+
+test('an unfinished row is centred too', () => {
+  const { positions } = layoutOf({ copies: 3, copyGap: 5 });
+  assert.equal(positions.length, 3);
+  const lastRow = positions.filter(([, y]) => y === Math.max(...positions.map((p) => p[1])));
+  const sum = lastRow.reduce((total, [x]) => total + x, 0);
+  assert.ok(Math.abs(sum) < 1e-9);
+});
+
+test('every copy is requested once, each at its own position', () => {
+  const positions = [[-10, 0], [10, 0]];
+  const args = engineArguments(defaultSlicerValues(), { definition: 'd', model: 'm', output: 'o' }, positions);
+  assert.equal(args.filter((arg) => arg === 'm').length, 2);
+  assert.ok(args.includes('mesh_position_x=-10') && args.includes('mesh_position_x=10'));
+  assert.ok(args.lastIndexOf('-e0') < args.lastIndexOf('-l'));
+});
+
+test('copies never leave the bed, with room for the bed adhesion', () => {
+  for (const [adhesion, margin] of [['none', 0], ['skirt', 4], ['brim', 9], ['raft', 16]]) {
+    for (let copies = 1; copies <= 36; copies++) {
+      const { fits, positions } = layoutOf({ copies, adhesion });
+      if (!fits) continue;
+      for (const [x, y] of positions) {
+        assert.ok(Math.abs(x) + 30 <= 105 - margin, `${adhesion} ${copies} x`);
+        assert.ok(Math.abs(y) + 14 <= 105 - margin, `${adhesion} ${copies} y`);
+      }
+    }
+  }
+});
+
+test('too many copies are refused with the number that does fit', () => {
+  const { fits, capacity, positions } = layoutOf({ copies: 36, copyGap: 5 });
+  assert.equal(fits, false);
+  assert.equal(capacity, 18);
+  assert.deepEqual(positions, []);
+  assert.equal(layoutOf({ copies: 18, copyGap: 5 }).fits, true);
+});
+
+test('a knob larger than the bed fits zero times', () => {
+  const { fits, capacity } = bedLayout({ ...defaultSlicerValues(), copies: 1 }, [300, 28]);
+  assert.equal(fits, false);
+  assert.equal(capacity, 0);
+});
+
 test('command line selects the extruder before loading the model', () => {
   const args = engineArguments(defaultSlicerValues(), { definition: '/d.json', model: '/m.stl', output: '/o.gcode' });
   assert.deepEqual(args.slice(0, 7), ['slice', '-v', '-p', '-j', '/d.json', '-o', '/o.gcode']);
   assert.ok(args.indexOf('-e0') < args.indexOf('-l'));
-  assert.equal(args.at(-1), '/m.stl');
+  assert.equal(args.filter((arg) => arg === '/m.stl').length, 1);
   const layerHeights = args.filter((arg) => arg === 'layer_height=0.2');
   assert.equal(layerHeights.length, 2, 'set on the global and the extruder scope');
 });

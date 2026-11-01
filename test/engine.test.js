@@ -67,6 +67,20 @@ describe('compiled engine, default knob', { skip: !engineBuilt && 'run slicer/bu
     assert.ok(maxX - minX < defaultValues().studDiameter + 1, `first wall is ${maxX - minX} mm wide`);
   });
 
+  test('places a grid of copies centred on the bed', async () => {
+    const { sliceKnob } = await import('../slicer/slice.js');
+    const fourKnobs = await sliceKnob(defaultValues(), { ...defaultSlicerValues(), copies: 4, copyGap: 5 });
+    const midBody = layers(fourKnobs)[60];
+    const [minX, maxX] = span(midBody, 0);
+    const [minY, maxY] = span(midBody, 1);
+
+    assert.ok(Math.abs(maxX - minX - 125) < 1, `grid width ${maxX - minX}`);
+    assert.ok(Math.abs(maxY - minY - 61) < 1, `grid depth ${maxY - minY}`);
+    assert.ok(Math.abs((minX + maxX) / 2 - BED / 2) < 0.5, 'centred in X');
+    assert.ok(Math.abs((minY + maxY) / 2 - BED / 2) < 0.5, 'centred in Y');
+    assert.ok(!midBody.some(([x]) => Math.abs(x - BED / 2) < 2), 'no extrusion in the 5 mm gap between columns');
+  });
+
   test('heats the bed and nozzle before moving', () => {
     const start = gcode.split('G28')[0];
     assert.match(start, /M190 S60/);

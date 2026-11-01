@@ -3,10 +3,14 @@
 // The engine reads only each setting's default_value. The formulas in Cura's
 // definition files run in the Cura app, so every derived setting is computed here.
 
+const BED_SIZE = 210;
 const NOZZLE = 0.4;
 const FILAMENT = 1.75;
 const FIRST_LAYER_HEIGHT = 0.3;
 const SUPPORT_DENSITY = 15;
+
+// Room to keep free around the grid for each kind of bed adhesion, in mm.
+const ADHESION_MARGIN = { none: 0, skirt: 4, brim: 9, raft: 16 };
 
 const MATERIALS = {
   PLA: { nozzleTemp: 200, bedTemp: 60, fanSpeed: 100 },
@@ -28,6 +32,9 @@ export const SLICER_PARAMS = [
     group: 'Print', key: 'material', label: 'Material', value: 'PLA',
     options: Object.keys(MATERIALS).map((name) => option(name)), apply: selectMaterial,
   },
+
+  { group: 'Bed layout', key: 'copies', label: 'Knobs on the bed', unit: 'knobs', min: 1, max: 36, step: 1, value: 1 },
+  { group: 'Bed layout', key: 'copyGap', label: 'Gap between knobs', min: 2, max: 30, step: 0.5, value: 5 },
 
   { group: 'Quality', key: 'layerHeight', label: 'Layer height', min: 0.08, max: 0.32, step: 0.04, value: 0.2 },
   { group: 'Quality', key: 'wallCount', label: 'Wall lines', unit: 'lines', min: 1, max: 8, step: 1, value: 3 },
@@ -188,13 +195,57 @@ export function toEngineSettings(v) {
 }
 
 /**
- * CuraEngine command line. Settings go on both the global and the extruder scope,
- * because the engine looks each one up in only one of them, and `-e0` must precede
- * `-l`, which is also where the rotation matrix is read.
+ * Arranges the copies in the most compact grid, with each row centred on the bed.
+ * @param {number[]} footprint width and depth of one knob
+ * @returns {{fits: boolean, capacity: number, cols: number, rows: number,
+ *            width: number, depth: number, positions: number[][]}}
+ *          positions are offsets from the bed centre
  */
-export function engineArguments(values, { definition, model, output }) {
+export function bedLayout({ copies, copyGap: gap, adhesion }, [knobWidth, knobDepth]) {
+  const usable = BED_SIZE - 2 * ADHESION_MARGIN[adhesion];
+  const fitting = (size) => Math.floor((usable + gap) / (size + gap));
+  const maxCols = fitting(knobWidth);
+  const maxRows = fitting(knobDepth);
+  const capacity = maxCols * maxRows;
+  if (copies > capacity) return { fits: false, capacity, cols: 0, rows: 0, width: 0, depth: 0, positions: [] };
+
+  const span = (count, size) => count * size + (count - 1) * gap;
+  let best;
+  for (let cols = 1; cols <= Math.min(copies, maxCols); cols++) {
+    const rows = Math.ceil(copies / cols);
+    if (rows > maxRows) continue;
+    const width = span(cols, knobWidth);
+    const depth = span(rows, knobDepth);
+    const size = Math.max(width, depth);
+    if (!best || size < best.size) best = { cols, rows, width, depth, size };
+  }
+
+  const positions = [];
+  for (let row = 0; row < best.rows; row++) {
+    const inRow = Math.min(best.cols, copies - row * best.cols);
+    const y = (row - (best.rows - 1) / 2) * (knobDepth + gap);
+    for (let col = 0; col < inRow; col++) {
+      positions.push([(col - (inRow - 1) / 2) * (knobWidth + gap), y]);
+    }
+  }
+
+  const { cols, rows, width, depth } = best;
+  return { fits: true, capacity, cols, rows, width, depth, positions };
+}
+
+/**
+ * CuraEngine command line. Settings go on both the global and the extruder scope,
+ * because the engine looks each one up in only one of them. `-e0` must precede every
+ * `-l`, which is also where the rotation matrix is read, and each `-l` is followed by
+ * the settings of that copy. The engine adds the mid-bed offset to mesh_position.
+ */
+export function engineArguments(values, { definition, model, output }, positions = [[0, 0]]) {
   const settings = Object.entries(toEngineSettings(values))
     .flatMap(([key, value]) => ['-s', `${key}=${value}`]);
 
-  return ['slice', '-v', '-p', '-j', definition, '-o', output, ...settings, '-e0', ...settings, '-l', model];
+  const copies = positions.flatMap(([x, y]) => [
+    '-e0', '-l', model, '-s', `mesh_position_x=${x}`, '-s', `mesh_position_y=${y}`,
+  ]);
+
+  return ['slice', '-v', '-p', '-j', definition, '-o', output, ...settings, '-e0', ...settings, ...copies];
 }

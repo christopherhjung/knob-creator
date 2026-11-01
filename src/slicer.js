@@ -10,10 +10,11 @@ const PATHS = {
  * Slices a binary STL in a worker.
  * @param {ArrayBuffer} stl
  * @param {object} values slicer settings from the UI
+ * @param {number[][]} positions copy offsets from the bed centre
  * @param {(percent: number) => void} onProgress
  * @returns {Promise<Uint8Array>} G-code
  */
-export function sliceStl(stl, values, onProgress) {
+export function sliceStl(stl, values, positions, onProgress) {
   const worker = new Worker(new URL('./slicer-worker.js', import.meta.url), { type: 'module' });
 
   return new Promise((resolve, reject) => {
@@ -24,6 +25,6 @@ export function sliceStl(stl, values, onProgress) {
     };
     // A module worker fails here when curaengine.js or its WASM can't be loaded.
     worker.onerror = () => reject(new Error('The slicer engine could not be loaded. Run slicer/build.sh to compile it.'));
-    worker.postMessage({ stl, args: engineArguments(values, PATHS) }, [stl]);
+    worker.postMessage({ stl, args: engineArguments(values, PATHS, positions) }, [stl]);
   }).finally(() => worker.terminate());
 }
