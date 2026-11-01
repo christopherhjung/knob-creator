@@ -1,6 +1,8 @@
 import { createControls } from './src/controls.js';
+import { downloadFile } from './src/download.js';
 import { buildKnob } from './src/knob.js';
 import { defaultValues, PARAMS } from './src/params.js';
+import { createSlicerPanel } from './src/slicer-panel.js';
 import { createViewer } from './src/viewer.js';
 
 const stats = document.querySelector('#stats');
@@ -29,12 +31,15 @@ function update() {
   downloadButton.disabled = triangles === 0;
 }
 
-function downloadStl() {
-  const url = URL.createObjectURL(new Blob([viewer.toStl()], { type: 'model/stl' }));
-  Object.assign(document.createElement('a'), { href: url, download: 'knob.stl' }).click();
-  URL.revokeObjectURL(url);
+function showTab(selected) {
+  for (const tab of document.querySelectorAll('[role="tab"]')) {
+    tab.setAttribute('aria-selected', tab === selected);
+    document.getElementById(tab.getAttribute('aria-controls')).hidden = tab !== selected;
+  }
 }
 
 createControls(document.querySelector('#controls'), PARAMS, values, update);
-downloadButton.addEventListener('click', downloadStl);
+downloadButton.addEventListener('click', () => downloadFile(viewer.toStl(), 'knob.stl', 'model/stl'));
+document.querySelectorAll('[role="tab"]').forEach((tab) => tab.addEventListener('click', () => showTab(tab)));
+createSlicerPanel(() => viewer.toStl());
 update();

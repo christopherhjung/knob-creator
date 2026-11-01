@@ -20,11 +20,26 @@
   <main id="viewer"></main>
   <aside>
     <h1>Knob Creator</h1>
-    <p class="hint">Dimensions in mm</p>
-    <form id="controls"></form>
-    <ul id="warnings" aria-live="polite"></ul>
-    <p id="stats"></p>
-    <button id="download" type="button">Download STL</button>
+    <div role="tablist" aria-label="Sections">
+      <button type="button" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="true">Model</button>
+      <button type="button" role="tab" id="tab-slicer" aria-controls="panel-slicer" aria-selected="false">Slicer</button>
+    </div>
+
+    <section id="panel-model" role="tabpanel" aria-labelledby="tab-model">
+      <p class="hint">Dimensions in mm</p>
+      <form id="controls"></form>
+      <ul id="warnings" aria-live="polite"></ul>
+      <p id="stats"></p>
+      <button id="download" type="button">Download STL</button>
+    </section>
+
+    <section id="panel-slicer" role="tabpanel" aria-labelledby="tab-slicer" hidden>
+      <p class="hint">Anycubic i3 Mega · 0.4 mm nozzle · 1.75 mm filament</p>
+      <form id="slicer-controls"></form>
+      <progress id="slicer-progress" max="100" hidden></progress>
+      <p id="slicer-status" aria-live="polite"></p>
+      <button id="slice" type="button">Slice &amp; download G-code</button>
+    </section>
   </aside>
 </body>
 </html>

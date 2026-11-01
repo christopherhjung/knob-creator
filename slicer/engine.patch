@@ -1,0 +1,38 @@
+diff --git a/src/utils/algorithm.h b/src/utils/algorithm.h
+index f9f7e52..4f7c9ca 100644
+--- a/src/utils/algorithm.h
++++ b/src/utils/algorithm.h
+@@ -66,30 +66,11 @@ void parallel_for(T from, T to, T increment, const std::function<void(const T)>&
+         return;
+     }
+ 
+-    // Set an atomic countdown variable to how many tasks need to be completed.
+-    std::atomic<T> tasks_pending((to - from) / increment);
+-
+-    // Wrap the loop-body, so that the outer scope can be notified by 'all_tasks_done'.
+-    std::promise<void> all_tasks_done;
+-    const auto func =
+-        [&body, &tasks_pending, &all_tasks_done](const T index)
+-        {
+-            body(index);
+-            if (--tasks_pending == 0)
+-            {
+-                all_tasks_done.set_value();
+-            }
+-        };
+-
+-    // Run all tasks.
+-    std::vector<std::future<void>> scope_guard;
+-    for (size_t index = from; index != to; index += increment)
++    // This WebAssembly build has no threads, so run the tasks one after the other.
++    for (T index = from; index != to; index += increment)
+     {
+-        scope_guard.push_back(std::async(std::launch::async, func, index));
++        body(index);
+     }
+-
+-    // Wait for the end-result before return.
+-    all_tasks_done.get_future().wait();
+ }
+ 
+ } // namespace cura

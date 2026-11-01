@@ -24,11 +24,13 @@ export function createControls(form, params, values, onChange) {
 const display = (value) => Math.round(value * 100) / 100;
 
 function createSelectRow({ key, label, options, apply }, values, onChange, refreshers, refreshAll) {
+  const parse = typeof options[0].value === 'number' ? Number : String;
   const select = Object.assign(document.createElement('select'), { id: key });
   select.append(...options.map((option) => new Option(option.label, option.value)));
   select.value = values[key];
   select.addEventListener('change', () => {
-    apply(values, Number(select.value));
+    if (apply) apply(values, parse(select.value));
+    else values[key] = parse(select.value);
     refreshAll();
     onChange(values);
   });

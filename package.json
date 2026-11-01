@@ -6,7 +6,7 @@
   "scripts": {
     "test": "node --test",
     "start": "python3 -m http.server 8000",
-    "build": "rm -rf _site && mkdir _site && rsync -R index.html index.js style.css src/*.js node_modules/three/build/three.module.js node_modules/three/build/three.core.js node_modules/three/examples/jsm/controls/OrbitControls.js node_modules/three/examples/jsm/exporters/STLExporter.js node_modules/three/examples/jsm/utils/BufferGeometryUtils.js node_modules/manifold-3d/manifold.js node_modules/manifold-3d/manifold.wasm _site/"
+    "build": "rm -rf _site && mkdir _site && rsync -Rr index.html index.js style.css src/*.js node_modules/three/build/three.module.js node_modules/three/build/three.core.js node_modules/three/examples/jsm/controls/OrbitControls.js node_modules/three/examples/jsm/exporters/STLExporter.js node_modules/three/examples/jsm/utils/BufferGeometryUtils.js node_modules/manifold-3d/manifold.js node_modules/manifold-3d/manifold.wasm slicer/engine _site/"
   },
   "private": true,
   "dependencies": {
