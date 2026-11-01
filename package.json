@@ -1,0 +1,17 @@
+{
+  "name": "KnobCreator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test",
+    "start": "python3 -m http.server 8000",
+    "build": "rm -rf _site && mkdir _site && rsync -R index.html index.js style.css src/*.js node_modules/three/build/three.module.js node_modules/three/build/three.core.js node_modules/three/examples/jsm/controls/OrbitControls.js node_modules/three/examples/jsm/exporters/STLExporter.js node_modules/three/examples/jsm/utils/BufferGeometryUtils.js node_modules/manifold-3d/manifold.js node_modules/manifold-3d/manifold.wasm _site/"
+  },
+  "private": true,
+  "dependencies": {
+    "manifold-3d": "^3.5.4",
+    "three": "^0.187.0"
+  },
+  "type": "module"
+}
