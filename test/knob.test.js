@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildKnob } from '../src/knob.js';
+import { buildKnob, groovePositions } from '../src/knob.js';
 import { defaultValues } from '../src/params.js';
 
 // Fixed proportions, so geometry checks don't move when a default changes.
 const knob = (overrides = {}) =>
-  buildKnob({ ...defaultValues(), bodyLength: 40, nutClearance: 0.3, pocketFloor: 15, ...overrides });
+  buildKnob({ ...defaultValues(), bodyLength: 40, nutClearance: 0.3, pocketFloor: 15, grooveCount: 0, ...overrides });
 
 function extent(positions, axis) {
   const values = positions.filter((_, i) => i % 3 === axis);
@@ -110,6 +110,48 @@ test('extra hole at the very edge leaves a notch in one piece', () => {
   assert.ok(!warnings.some((w) => w.includes('separate pieces')));
 });
 
+const grooveInput = { ...defaultValues(), bodyLength: 60, bodyWidth: 28, grooveCount: 3, grooveSpacing: 4, groovePosition: 30 };
+
+test('grooves form four packs, centred on the ellipse outline', () => {
+  const centres = groovePositions(grooveInput);
+  assert.equal(centres.length, 12);
+  for (const [x, y] of centres) near((x / 30) ** 2 + (y / 14) ** 2, 1, 1e-6);
+  for (const [sx, sy] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+    assert.equal(centres.filter(([x, y]) => x * sx > 0 && y * sy > 0).length, 3);
+  }
+});
+
+test('groove pack position runs from the tip to level with the centre', () => {
+  const single = (groovePosition) => groovePositions({ ...grooveInput, grooveCount: 1, groovePosition })[0];
+  near(single(0)[0], 30);
+  near(single(30)[0], 30 * 0.7);
+  near(single(100)[0], 0);
+  near(single(100)[1], 14);
+});
+
+test('grooves in a pack are spaced evenly along the curve', () => {
+  const pack = groovePositions(grooveInput).filter((_, i) => i % 4 === 0);
+  const [first, middle, last] = pack;
+  near(Math.hypot(first[0] - middle[0], first[1] - middle[1]), 4, 0.02);
+  near(Math.hypot(last[0] - middle[0], last[1] - middle[1]), 4, 0.02);
+});
+
+test('grooves cut half cylinders along the full body height and are optional', () => {
+  const shared = { bodyLength: 60, topRounding: 0, grooveSpacing: 8, grooveDiameter: 3 };
+  const plain = knob(shared).volume;
+  const cut = plain - knob({ ...shared, grooveCount: 3 }).volume;
+  near(cut, 12 * (Math.PI * 1.5 ** 2 / 2) * 20, 0.03 * cut);
+  assert.equal(knob({ ...shared, grooveCount: 0 }).volume, plain);
+});
+
+test('grooves leave a stud wider than the body untouched', () => {
+  const wide = { bodyWidth: 12, studDiameter: 14, nutWidth: 3, topRounding: 0, grooveDiameter: 4 };
+  const { positions } = knob({ ...wide, grooveCount: 1, groovePosition: 100 });
+  for (let i = 2; i < positions.length; i += 3) {
+    assert.ok(positions[i] === 0 || positions[i] >= 2, 'a groove cut into the stud');
+  }
+});
+
 test('hexagon flats face the short axis of the oval', () => {
   const { positions } = knob({ boreDiameter: 0 });
   const floor = [];
@@ -133,6 +175,8 @@ test('unprintable dimensions are reported', () => {
   warned({ pocketFloor: 1 }, 'floor under the pocket');
   warned({ pocketFloor: 20 }, 'no nut pocket');
   warned({ holeDiameter: 4, holePosition: 30 }, 'from the nut pocket');
+  warned({ grooveCount: 1, groovePosition: 100, grooveDiameter: 15, bodyWidth: 20 }, 'from the nut pocket');
+  warned({ grooveCount: 1, groovePosition: 30, holeDiameter: 4, holePosition: 70, grooveDiameter: 15 }, 'from the extra hole');
   warned({ holeDiameter: 4, holePosition: 90 }, 'from the outer edge');
   warned({ nutWidth: 30, pocketFloor: 0, boreDiameter: 0, studDiameter: 3 }, 'separate pieces');
 });

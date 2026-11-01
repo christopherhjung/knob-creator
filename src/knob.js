@@ -6,6 +6,8 @@ const { Manifold } = wasm;
 
 const SEGMENTS = 96;
 const ROUNDING_STEPS = 12;
+const GROOVE_SEGMENTS = 32;
+const WALK_STEPS = 64;
 const MIN_WALL = 1.2; // mm, about three perimeters on a 0.4 mm nozzle
 const EPS = 1; // how far cutting tools overshoot the surface, so faces never coincide
 
@@ -28,7 +30,17 @@ export function buildKnob(p) {
   const pocketDepth = p.bodyHeight - p.pocketFloor;
 
   try {
-    const body = keep(Manifold.hull(bodyPoints(p)));
+    let body = keep(Manifold.hull(bodyPoints(p)));
+
+    const grooves = groovePositions(p);
+    if (grooves.length) {
+      const radius = p.grooveDiameter / 2;
+      const cutter = keep(Manifold.cylinder(p.bodyHeight + 2 * EPS, radius, radius, GROOVE_SEGMENTS));
+      const cutters = grooves.map(([x, y]) => keep(cutter.translate([x, y, p.studHeight - EPS])));
+      // Cut before the stud is added, so a groove can never bite into the stud.
+      body = keep(body.subtract(keep(Manifold.union(cutters))));
+    }
+
     const stud = keep(Manifold.cylinder(p.studHeight, p.studDiameter / 2, p.studDiameter / 2, SEGMENTS));
 
     let knob = keep(stud.add(body));
@@ -67,6 +79,31 @@ export function buildKnob(p) {
   } finally {
     new Set(made).forEach((solid) => solid.delete());
   }
+}
+
+/**
+ * Groove centres [x, y] on the base ellipse: one pack, spaced along the curve and
+ * centred at groovePosition, mirrored into all four quadrants.
+ */
+export function groovePositions(p) {
+  const a = p.bodyLength / 2;
+  const b = p.bodyWidth / 2;
+
+  // Steps `distance` along the curve from ellipse angle `angle`.
+  const walk = (angle, distance) => {
+    const step = distance / WALK_STEPS;
+    for (let i = 0; i < WALK_STEPS; i++) {
+      angle += step / Math.hypot(a * Math.sin(angle), b * Math.cos(angle));
+    }
+    return angle;
+  };
+
+  const center = Math.acos(1 - p.groovePosition / 100);
+  const angles = Array.from({ length: p.grooveCount }, (_, i) =>
+    walk(center, (i - (p.grooveCount - 1) / 2) * p.grooveSpacing));
+
+  return angles.flatMap((angle) => [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([sx, sy]) =>
+    [sx * a * Math.cos(angle), sy * b * Math.sin(angle)]));
 }
 
 /** Extra hole centre on the X axis: 0% is the knob's centre, 100% the outer ellipse. */
@@ -140,6 +177,27 @@ function findProblems(p, flatRadius, cornerRadius, pieceCount) {
     warnings.push(`The side wall around the pocket is only ${Math.max(0, wall).toFixed(1)} mm thick.`);
   } else if (reach(radius) > 1) {
     warnings.push('The rounding reaches the pocket, so the rim is lower than the top face.');
+  }
+
+  const grooves = groovePositions(p);
+  if (grooves.length) {
+    // Twelve points around the hexagon: its corners and the middle of its flats.
+    const hexagon = Array.from({ length: 12 }, (_, i) => {
+      const radius = i % 2 ? flatRadius : cornerRadius;
+      return [radius * Math.cos((i * Math.PI) / 6), radius * Math.sin((i * Math.PI) / 6)];
+    });
+    const gap = (distance) => Math.max(0, distance - p.grooveDiameter / 2);
+    const toPocket = Math.min(...grooves.flatMap(([x, y]) =>
+      hexagon.map(([hx, hy]) => Math.hypot(x - hx, y - hy))));
+    if (gap(toPocket) < MIN_WALL) {
+      warnings.push(`A grip groove is only ${gap(toPocket).toFixed(1)} mm from the nut pocket.`);
+    }
+    if (p.holeDiameter > 0) {
+      const toHole = Math.min(...grooves.map(([x, y]) => Math.hypot(x - holeOffset(p), y)));
+      if (gap(toHole - p.holeDiameter / 2) < MIN_WALL) {
+        warnings.push(`A grip groove is only ${gap(toHole - p.holeDiameter / 2).toFixed(1)} mm from the extra hole.`);
+      }
+    }
   }
 
   if (p.holeDiameter > 0) {

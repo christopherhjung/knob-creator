@@ -31,6 +31,16 @@ test('extra hole diameter follows the thread, its percentage position does not',
   assert.equal(values.holePosition, 70);
 });
 
+test('groove sizes follow the thread, their count and position do not', () => {
+  const values = defaultValues();
+  selectNut(values, 18); // M6 to M12
+
+  assert.equal(values.grooveSpacing, 8);
+  assert.equal(values.grooveDiameter, 6);
+  assert.equal(values.grooveCount, 3);
+  assert.equal(values.groovePosition, 30);
+});
+
 test('user changes carry over, and no bore stays no bore', () => {
   const values = { ...defaultValues(), bodyLength: 80, boreDiameter: 0 };
   selectNut(values, 18); // M6 to M12

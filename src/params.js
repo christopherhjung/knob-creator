@@ -30,6 +30,13 @@ export const PARAMS = [
   // Printed holes come out undersized; tune this for your printer.
   { group: 'Nut pocket', key: 'nutClearance', label: 'Clearance', min: 0, max: 2, step: 0.05, value: 0.1 },
 
+  // Four mirrored packs of vertical cylinders centred on the base ellipse.
+  { group: 'Grip grooves', key: 'grooveCount', label: 'Grooves per pack (0 = none)', unit: 'grooves', min: 0, max: 10, step: 1, value: 3 },
+  { group: 'Grip grooves', key: 'grooveSpacing', label: 'Distance between grooves', min: 0.5, max: 30, step: 0.1, value: 4, scales: true },
+  { group: 'Grip grooves', key: 'grooveDiameter', label: 'Groove diameter', min: 0.5, max: 15, step: 0.1, value: 3, scales: true },
+  // 0 is the tip of the ellipse, 100 is level with the centre hole.
+  { group: 'Grip grooves', key: 'groovePosition', label: 'Position (% tip to centre)', unit: '%', min: 0, max: 100, step: 1, value: 30 },
+
   // Cut down to the same floor as the nut pocket.
   { group: 'Extra hole', key: 'holeDiameter', label: 'Diameter (0 = none)', min: 0, max: 30, step: 0.1, value: 0, scales: true },
   // Along the long axis: 0 is the centre hole, 100 is the outer ellipse.
