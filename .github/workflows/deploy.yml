@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -38,5 +39,19 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # While Pages is set to "Deploy from a branch", GitHub also publishes the raw repo,
+      # which has no node_modules. Whichever deploys last goes live, so this one waits.
+      # With Source set to "GitHub Actions" that run doesn't exist and this step can go.
+      - name: Wait for the branch publisher
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 20
+          for attempt in $(seq 1 30); do
+            running=$(gh run list --repo "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA" --json name,status \
+              --jq '[.[] | select(.name == "pages build and deployment" and .status != "completed")] | length' || echo 0)
+            [ "$running" = "0" ] && break
+            sleep 10
+          done
       - id: deployment
         uses: actions/deploy-pages@v5
