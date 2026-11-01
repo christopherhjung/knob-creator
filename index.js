@@ -12,6 +12,7 @@ const downloadButton = document.querySelector('#download');
 const viewer = createViewer(document.querySelector('#viewer'));
 const values = defaultValues();
 let framedNut;
+const refreshSlicer = createSlicerPanel(() => viewer.toStl(), () => knobFootprint(values));
 
 function update() {
   const knob = buildKnob(values);
@@ -29,6 +30,7 @@ function update() {
     ...knob.warnings.map((text) => Object.assign(document.createElement('li'), { textContent: text })),
   );
   downloadButton.disabled = triangles === 0;
+  refreshSlicer();
 }
 
 function showTab(selected) {
@@ -41,5 +43,4 @@ function showTab(selected) {
 createControls(document.querySelector('#controls'), PARAMS, values, update);
 downloadButton.addEventListener('click', () => downloadFile(viewer.toStl(), 'knob.stl', 'model/stl'));
 document.querySelectorAll('[role="tab"]').forEach((tab) => tab.addEventListener('click', () => showTab(tab)));
-createSlicerPanel(() => viewer.toStl(), () => knobFootprint(values));
 update();

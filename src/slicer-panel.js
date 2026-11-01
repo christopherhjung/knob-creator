@@ -7,6 +7,7 @@ import { bedLayout, defaultSlicerValues, SLICER_PARAMS } from './slicer-settings
  * Wires up the Slicer tab.
  * @param {() => DataView} getStl returns the current knob as binary STL
  * @param {() => number[]} getFootprint returns the width and depth of the current knob
+ * @returns {() => void} call when the knob changes
  */
 export function createSlicerPanel(getStl, getFootprint) {
   const status = document.querySelector('#slicer-status');
@@ -22,12 +23,10 @@ export function createSlicerPanel(getStl, getFootprint) {
       ? `${layout.cols} × ${layout.rows} grid, ${layout.width.toFixed(1)} × ${layout.depth.toFixed(1)} mm`
       : `Too many knobs: ${layout.capacity} fit on the bed at this size and gap.`;
     button.disabled = slicing || !layout.fits;
-    return layout;
+    button.title = layout.fits ? '' : layoutText.textContent; // the button stays visible on every tab
   }
 
   createControls(document.querySelector('#slicer-controls'), SLICER_PARAMS, values, refreshLayout);
-  document.querySelector('#tab-slicer').addEventListener('click', refreshLayout); // the knob may have changed
-  refreshLayout();
 
   button.addEventListener('click', async () => {
     slicing = true;
@@ -35,6 +34,7 @@ export function createSlicerPanel(getStl, getFootprint) {
     progress.hidden = false;
     progress.value = 0;
     status.textContent = 'Slicing…';
+    status.title = '';
 
     try {
       const stl = getStl();
@@ -47,10 +47,13 @@ export function createSlicerPanel(getStl, getFootprint) {
       status.textContent = layers ? `Done: ${layers[1]} layers.` : 'Done.';
     } catch (error) {
       status.textContent = error.message;
+      status.title = error.message; // the header cuts long messages off
     } finally {
       slicing = false;
       refreshLayout();
       progress.hidden = true;
     }
   });
+
+  return refreshLayout;
 }
