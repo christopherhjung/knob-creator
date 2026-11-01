@@ -4,7 +4,7 @@ import { before, describe, test } from 'node:test';
 import { defaultValues } from '../src/params.js';
 import { defaultSlicerValues } from '../src/slicer-settings.js';
 
-const engineBuilt = existsSync(new URL('../slicer/engine/curaengine.wasm', import.meta.url));
+const engineBuilt = existsSync(new URL('../slicer/engine/CuraEngine.wasm', import.meta.url));
 const BED = 210;
 
 function layers(gcode) {

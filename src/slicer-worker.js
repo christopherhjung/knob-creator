@@ -1,5 +1,5 @@
 // Runs CuraEngine off the main thread, so the page stays responsive while slicing.
-import createCuraEngine from '../slicer/engine/curaengine.js';
+import createCuraEngine from '../slicer/engine/CuraEngine.js';
 
 const DEFINITIONS = [
   'fdmprinter.def.json',

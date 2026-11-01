@@ -7,7 +7,7 @@ import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 import { buildKnob } from '../src/knob.js';
 import { defaultValues, knobFootprint } from '../src/params.js';
 import { bedLayout, defaultSlicerValues, engineArguments } from '../src/slicer-settings.js';
-import createCuraEngine from './engine/curaengine.js';
+import createCuraEngine from './engine/CuraEngine.js';
 
 const DEFINITIONS = '/definitions';
 const DEFINITION_FILES = [

@@ -43,6 +43,6 @@ emcmake cmake -S "$BUILD/CuraEngine" -B "$BUILD/out" -G Ninja \
 # -k 0 reports every failing file at once instead of stopping at the first.
 cmake --build "$BUILD/out" --target CuraEngine -- -k 0 2>&1 | tee "$BUILD/build.log"
 
-cp "$BUILD/out/CuraEngine.js" "$OUT/curaengine.js"
-cp "$BUILD/out/CuraEngine.wasm" "$OUT/curaengine.wasm"
+# Keep these names: the .js loads CuraEngine.wasm, and Linux and GitHub Pages are case-sensitive.
+cp "$BUILD/out/CuraEngine.js" "$BUILD/out/CuraEngine.wasm" "$OUT/"
 cp "$BUILD/CuraEngine/LICENSE" "$OUT/LICENSE-CuraEngine"

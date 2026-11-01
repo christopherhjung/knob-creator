@@ -23,7 +23,7 @@ export function sliceStl(stl, values, positions, onProgress) {
       else if (data.gcode) resolve(data.gcode);
       else reject(new Error(data.error));
     };
-    // A module worker fails here when curaengine.js or its WASM can't be loaded.
+    // A module worker fails here when CuraEngine.js or its WASM can't be loaded.
     worker.onerror = () => reject(new Error('The slicer engine could not be loaded. Run slicer/build.sh to compile it.'));
     worker.postMessage({ stl, args: engineArguments(values, PATHS, positions) }, [stl]);
   }).finally(() => worker.terminate());
