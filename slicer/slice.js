@@ -1,12 +1,12 @@
-// Slices a knob with the compiled engine outside the browser.
-// Run `node slicer/slice.js [output.gcode]` for a default knob; the tests use sliceKnob().
+// Slices a model with the compiled engine outside the browser.
+// Run `node slicer/slice.js [output.gcode]` for a default knob; the tests use sliceMesh().
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import * as THREE from 'three';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 import { buildKnob } from '../src/knob.js';
-import { defaultValues, knobFootprint } from '../src/params.js';
-import { bedLayout, defaultSlicerValues, engineArguments } from '../src/slicer-settings.js';
+import { defaultValues } from '../src/params.js';
+import { bedLayout, defaultSlicerValues, engineArguments, meshFootprint } from '../src/slicer-settings.js';
 import createCuraEngine from './engine/CuraEngine.js';
 
 const DEFINITIONS = '/definitions';
@@ -17,8 +17,7 @@ const DEFINITION_FILES = [
   'anycubic_i3_mega_extruder_0.def.json',
 ];
 
-function knobToStl(knobValues) {
-  const { positions, indices } = buildKnob(knobValues);
+function toStl({ positions, indices }) {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setIndex(new THREE.BufferAttribute(indices, 1));
@@ -26,8 +25,11 @@ function knobToStl(knobValues) {
   return new Uint8Array(stl.buffer, stl.byteOffset, stl.byteLength);
 }
 
-/** @returns {Promise<string>} G-code */
-export async function sliceKnob(knobValues = defaultValues(), slicerValues = defaultSlicerValues()) {
+/**
+ * @param {{positions: Float32Array, indices: Uint32Array}} mesh as a model's build() returns it
+ * @returns {Promise<string>} G-code
+ */
+export async function sliceMesh(mesh, slicerValues = defaultSlicerValues()) {
   const engine = await createCuraEngine({
     print: () => {},
     printErr: () => {},
@@ -39,16 +41,16 @@ export async function sliceKnob(knobValues = defaultValues(), slicerValues = def
     const text = await readFile(new URL(`engine/definitions/${name}`, import.meta.url), 'utf8');
     engine.FS.writeFile(`${DEFINITIONS}/${name}`, text);
   }
-  engine.FS.writeFile('/knob.stl', knobToStl(knobValues));
+  engine.FS.writeFile('/knob.stl', toStl(mesh));
 
   engine.callMain(engineArguments(slicerValues, {
     definition: `${DEFINITIONS}/anycubic_i3_mega.def.json`,
     model: '/knob.stl',
     output: '/knob.gcode',
-  }, bedLayout(slicerValues, knobFootprint(knobValues)).positions));
+  }, bedLayout(slicerValues, meshFootprint(mesh)).positions));
   return engine.FS.readFile('/knob.gcode', { encoding: 'utf8' });
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  await writeFile(process.argv[2] ?? 'knob.gcode', await sliceKnob());
+  await writeFile(process.argv[2] ?? 'knob.gcode', await sliceMesh(buildKnob(defaultValues())));
 }

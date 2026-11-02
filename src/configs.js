@@ -10,10 +10,16 @@ function storage() {
   }
 }
 
-export function readConfigs() {
+// Configurations saved before there was more than one model have no type.
+const typeOf = (config) => config.type ?? 'knob';
+const same = (a, b) => a.name === b.name && typeOf(a) === typeOf(b);
+
+/** @param {string} [type] only configurations of this model */
+export function readConfigs(type) {
   try {
     const configs = JSON.parse(storage()?.getItem(STORAGE_KEY) ?? '[]');
-    return Array.isArray(configs) ? configs.filter((config) => typeof config?.name === 'string') : [];
+    if (!Array.isArray(configs)) return [];
+    return configs.filter((config) => typeof config?.name === 'string' && (!type || typeOf(config) === type));
   } catch {
     return []; // damaged data must not stop the app from starting
   }
@@ -28,18 +34,18 @@ function writeConfigs(configs) {
   }
 }
 
-/** Saves a configuration, replacing one with the same name. @returns {boolean} success */
+/** Saves a configuration, replacing one of the same model and name. @returns {boolean} success */
 export function saveConfig(config) {
   const configs = readConfigs();
-  const index = configs.findIndex(({ name }) => name === config.name);
+  const index = configs.findIndex((other) => same(other, config));
   if (index >= 0) configs[index] = config;
   else configs.push(config);
   return writeConfigs(configs);
 }
 
-/** @returns {boolean} success */
-export function deleteConfig(name) {
-  return writeConfigs(readConfigs().filter((config) => config.name !== name));
+/** @param {{name: string, type?: string}} config @returns {boolean} success */
+export function deleteConfig(config) {
+  return writeConfigs(readConfigs().filter((other) => !same(other, config)));
 }
 
 /**
@@ -47,9 +53,11 @@ export function deleteConfig(name) {
  * missing or no longer valid falls back to its default and numbers stay in range.
  */
 export function applyConfig(values, params, saved) {
-  for (const { key, value, min, max, options } of params) {
+  for (const { key, value, min, max, options, validate } of params) {
     const candidate = saved?.[key];
-    if (options) {
+    if (validate) {
+      values[key] = structuredClone(validate(candidate) ? candidate : value);
+    } else if (options) {
       values[key] = options.some((option) => option.value === candidate) ? candidate : value;
     } else {
       values[key] = Number.isFinite(candidate) ? Math.min(max, Math.max(min, candidate)) : value;

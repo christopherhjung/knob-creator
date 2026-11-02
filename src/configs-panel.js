@@ -1,15 +1,16 @@
 import { applyConfig, deleteConfig, readConfigs, saveConfig } from './configs.js';
 import { getLanguage, onLanguageChange, t } from './i18n.js';
-import { PARAMS } from './params.js';
-import { SLICER_PARAMS } from './slicer-settings.js';
+import { slicerParams } from './slicer-settings.js';
 
 /**
- * Wires up the configurations tab.
- * @param {object} model current model values, changed in place on load
+ * Wires up the configurations tab, which lists the current model's configurations.
+ * @param {() => object} getModel the model being edited, from MODELS
+ * @param {() => object} getValues its values, changed in place on load
  * @param {object} slicer current slicer values, changed in place on load
  * @param {() => void} onLoad redraws the app after loading
+ * @returns {{render: () => void}} for when the model changes
  */
-export function createConfigsPanel(model, slicer, onLoad) {
+export function createConfigsPanel(getModel, getValues, slicer, onLoad) {
   const form = document.querySelector('#config-form');
   const nameInput = document.querySelector('#config-name');
   const list = document.querySelector('#config-list');
@@ -26,8 +27,9 @@ export function createConfigsPanel(model, slicer, onLoad) {
   }
 
   function load(config) {
-    applyConfig(model, PARAMS, config.model);
-    applyConfig(slicer, SLICER_PARAMS, config.slicer);
+    const { params, orientations } = getModel();
+    applyConfig(getValues(), params, config.model);
+    applyConfig(slicer, slicerParams(orientations), config.slicer);
     nameInput.value = config.name;
     onLoad();
     say('Loaded.');
@@ -35,7 +37,7 @@ export function createConfigsPanel(model, slicer, onLoad) {
 
   function remove(config) {
     if (!window.confirm(t('Delete this configuration?'))) return;
-    if (deleteConfig(config.name)) render();
+    if (deleteConfig(config)) render();
     else say('Could not save in this browser.');
   }
 
@@ -55,7 +57,7 @@ export function createConfigsPanel(model, slicer, onLoad) {
   }
 
   function render() {
-    const configs = readConfigs();
+    const configs = readConfigs(getModel().id);
     list.replaceChildren(...configs.map(row));
     document.querySelector('#config-empty').hidden = configs.length > 0;
   }
@@ -64,10 +66,13 @@ export function createConfigsPanel(model, slicer, onLoad) {
     event.preventDefault();
     const name = nameInput.value.trim();
     if (!name) return;
-    const exists = readConfigs().some((config) => config.name === name);
+    const { id: type } = getModel();
+    const exists = readConfigs(type).some((config) => config.name === name);
     if (exists && !window.confirm(t('Replace the saved configuration with this name?'))) return;
 
-    const saved = saveConfig({ name, savedAt: Date.now(), model: { ...model }, slicer: { ...slicer } });
+    const saved = saveConfig({
+      name, type, savedAt: Date.now(), model: structuredClone(getValues()), slicer: { ...slicer },
+    });
     say(saved ? 'Saved.' : 'Could not save in this browser.');
     render();
   });
@@ -76,5 +81,5 @@ export function createConfigsPanel(model, slicer, onLoad) {
     status.textContent = '';
     render();
   });
-  render();
+  return { render };
 }

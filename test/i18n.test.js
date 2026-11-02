@@ -4,6 +4,8 @@ import { after, test } from 'node:test';
 import { getLanguage, setLanguage, t } from '../src/i18n.js';
 import { buildKnob } from '../src/knob.js';
 import { defaultValues, PARAMS } from '../src/params.js';
+import { MODELS } from '../src/models.js';
+import { buildPipe, PIPE_PARAMS } from '../src/pipe.js';
 import { SLICER_PARAMS } from '../src/slicer-settings.js';
 
 after(() => setLanguage('de'));
@@ -18,7 +20,8 @@ test('German is the default', () => {
 });
 
 test('every setting has a German text', () => {
-  for (const { group, label, unit, options = [] } of [...PARAMS, ...SLICER_PARAMS]) {
+  for (const { group, label, unit, options = [] } of [...PARAMS, ...PIPE_PARAMS, ...SLICER_PARAMS]) {
+    if (!group) continue; // not shown as a control
     for (const text of [group, label, unit ?? 'mm', ...options.map((option) => option.label)]) {
       assert.ok(translated(text), text);
     }
@@ -44,6 +47,17 @@ test('every model warning has a German text', () => {
   ];
   const warnings = new Set(cases.flatMap((overrides) => buildKnob({ ...base, ...overrides }).warnings));
   assert.ok(warnings.size >= 12, `only ${warnings.size} warnings exercised`);
+  for (const warning of warnings) assert.ok(translated(warning), warning);
+});
+
+test('every model and pipe warning has a German text', () => {
+  for (const { name, description } of MODELS) {
+    assert.ok(translated(name), name);
+    assert.ok(translated(description), description);
+  }
+  const knot = { ...defaultValues(PIPE_PARAMS), socketLength: 100, path: [[-30, 0], [40, 0], [40, 40], [-30, 0]] };
+  const { warnings } = buildPipe(knot);
+  assert.equal(warnings.length, 3);
   for (const warning of warnings) assert.ok(translated(warning), warning);
 });
 

@@ -1,7 +1,7 @@
 import { t } from './i18n.js';
 
 /**
- * Renders one row per parameter into `form`: a dropdown if it has `options`,
+ * Renders one row per grouped parameter into `form`: a dropdown if it has `options`,
  * otherwise a slider + number box.
  * Calls onChange(values) whenever a value changes.
  */
@@ -12,6 +12,7 @@ export function createControls(form, params, values, onChange) {
   const refreshAll = () => refreshers.forEach((refresh) => refresh());
 
   for (const param of params) {
+    if (!param.group) continue; // edited elsewhere, like the pipe's path
     if (!groups.has(param.group)) {
       const fieldset = document.createElement('fieldset');
       fieldset.append(Object.assign(document.createElement('legend'), { textContent: t(param.group) }));

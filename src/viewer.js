@@ -26,7 +26,7 @@ export function createViewer(container) {
   keyLight.position.set(1, 1, 2);
   camera.add(keyLight); // the light follows the view, so no side of the knob goes dark
 
-  const grid = new THREE.GridHelper(200, 20, 0x667085, 0x3a4252);
+  const grid = new THREE.GridHelper(210, 21, 0x667085, 0x3a4252); // the i3 Mega's bed
   grid.rotateX(Math.PI / 2);
   scene.add(grid);
 
@@ -64,8 +64,12 @@ export function createViewer(container) {
       mesh.geometry.computeBoundingSphere();
       const { center, radius } = mesh.geometry.boundingSphere;
       const direction = camera.position.clone().sub(controls.target).normalize();
+      // Read the size now: a view that was just unhidden has not been resized yet.
+      const aspect = container.clientWidth / container.clientHeight || camera.aspect;
+      const halfHeight = THREE.MathUtils.degToRad(camera.fov / 2);
+      const halfWidth = Math.atan(Math.tan(halfHeight) * aspect);
       controls.target.copy(center);
-      camera.position.copy(center).addScaledVector(direction, radius * 3.7);
+      camera.position.copy(center).addScaledVector(direction, (1.15 * radius) / Math.sin(Math.min(halfHeight, halfWidth)));
       controls.update();
       render();
     },

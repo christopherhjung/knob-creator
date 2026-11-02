@@ -43,12 +43,8 @@ export const PARAMS = [
   { group: 'Extra hole', key: 'holePosition', label: 'Position (% centre to edge)', unit: '%', min: 0, max: 100, step: 1, value: 70 },
 ];
 
-export const defaultValues = () =>
-  Object.fromEntries(PARAMS.map(({ key, value }) => [key, value]));
-
-/** Width and depth the knob takes up on the bed, in mm. */
-export const knobFootprint = ({ bodyLength, bodyWidth, studDiameter }) =>
-  [Math.max(bodyLength, studDiameter), Math.max(bodyWidth, studDiameter)];
+export const defaultValues = (params = PARAMS) =>
+  Object.fromEntries(params.map(({ key, value }) => [key, structuredClone(value)]));
 
 /**
  * Switches `values` to the nut with the given width across flats: the bore moves

@@ -1,8 +1,4 @@
-import Module from 'manifold-3d';
-
-const wasm = await Module();
-wasm.setup();
-const { Manifold } = wasm;
+import { Manifold } from './manifold.js';
 
 const SEGMENTS = 96;
 const ROUNDING_STEPS = 12;

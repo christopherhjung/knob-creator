@@ -18,18 +18,31 @@
 </head>
 <body>
   <header>
-    <h1>KnobCreator</h1>
+    <div class="brand">
+      <h1><a href="#">KnobCreator</a></h1>
+      <a class="model-only" href="#" data-i18n="← All models"></a>
+    </div>
     <p id="slicer-status" aria-live="polite"></p>
     <progress id="slicer-progress" max="100" hidden></progress>
     <select id="language" data-i18n-label="Language">
       <option value="de">Deutsch</option>
       <option value="en">English</option>
     </select>
-    <button id="download" class="secondary" type="button" data-i18n="Download STL"></button>
-    <button id="slice" type="button" data-i18n="Slice &amp; download G-code"></button>
+    <button id="download" class="secondary model-only" type="button" data-i18n="Download STL"></button>
+    <button id="slice" class="model-only" type="button" data-i18n="Slice &amp; download G-code"></button>
   </header>
-  <main id="viewer"></main>
-  <aside>
+  <main id="home">
+    <h2 data-i18n="Choose a model"></h2>
+    <ul id="model-list"></ul>
+  </main>
+  <main id="stage" class="model-only">
+    <div id="editor">
+      <canvas id="path-editor" data-i18n-label="Pipe path, seen from above the bed"></canvas>
+      <p class="hint" data-i18n="Drag points to shape the pipe; points snap near the 5 mm grid, control points near every 45°, hold Shift to move freely. Double-click the pipe to add a point there, elsewhere to add one at the end, and a point to remove it. Scroll to zoom, drag the background to pan."></p>
+    </div>
+    <div id="viewer"></div>
+  </main>
+  <aside class="model-only">
     <div role="tablist" data-i18n-label="Sections">
       <button type="button" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="true" data-i18n="Model">Model</button>
       <button type="button" role="tab" id="tab-slicer" aria-controls="panel-slicer" aria-selected="false" data-i18n="Slicer">Slicer</button>
@@ -37,6 +50,7 @@
     </div>
 
     <section id="panel-model" role="tabpanel" aria-labelledby="tab-model">
+      <h2 id="model-name"></h2>
       <p class="hint" data-i18n="Dimensions in mm"></p>
       <form id="controls"></form>
       <ul id="warnings" aria-live="polite"></ul>

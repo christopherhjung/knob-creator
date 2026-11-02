@@ -12,6 +12,18 @@ const GERMAN = {
   'Slice & download G-code': 'Slicen & G-Code herunterladen',
   'Anycubic i3 Mega · {n} mm nozzle · {n} mm filament': 'Anycubic i3 Mega · {n} mm Düse · {n} mm Filament',
   '{n} triangles · {n} cm³': '{n} Dreiecke · {n} cm³',
+  '← All models': '← Alle Modelle',
+  'Choose a model': 'Modell auswählen',
+  'Turning knob': 'Drehknopf',
+  'Oval knob with a stud, a hex nut pocket and grip grooves.':
+    'Ovaler Drehknopf mit Zapfen, Sechskant-Muttertasche und Griffrillen.',
+  'Pipe adapter': 'Rohradapter',
+  'Connects two pipe diameters along a curve you draw.':
+    'Verbindet zwei Rohrdurchmesser entlang einer selbst gezeichneten Kurve.',
+  'Pipe path, seen from above the bed': 'Rohrverlauf, von oben auf das Bett gesehen',
+  'Front of the bed': 'Vorderseite des Betts',
+  'Drag points to shape the pipe; points snap near the 5 mm grid, control points near every 45°, hold Shift to move freely. Double-click the pipe to add a point there, elsewhere to add one at the end, and a point to remove it. Scroll to zoom, drag the background to pan.':
+    'Punkte ziehen, um das Rohr zu formen; Punkte rasten nahe dem 5-mm-Raster ein, Kontrollpunkte nahe jeder 45°-Richtung, mit gedrückter Umschalttaste frei. Doppelklick auf das Rohr fügt dort einen Punkt ein, anderswo am Ende, und Doppelklick auf einen Punkt entfernt ihn. Scrollen zoomt, Ziehen des Hintergrunds verschiebt die Ansicht.',
 
   // Saved configurations
   Configurations: 'Konfigurationen',
@@ -50,15 +62,26 @@ const GERMAN = {
   'Diameter (0 = none)': 'Durchmesser (0 = keins)',
   'Position (% centre to edge)': 'Position (% Mitte bis Rand)',
 
+  // Pipe adapter settings
+  'Pipe ends': 'Rohrenden',
+  'Inner diameter at the start': 'Innendurchmesser am Anfang',
+  'Inner diameter at the end': 'Innendurchmesser am Ende',
+  'Socket length (same diameter)': 'Muffenlänge (gleicher Durchmesser)',
+  'Straight extension at the start': 'Gerade Verlängerung am Anfang',
+  'Straight extension at the end': 'Gerade Verlängerung am Ende',
+  Wall: 'Wand',
+  'Wall thickness': 'Wandstärke',
+
   // Slicer settings
   Print: 'Druck',
   Orientation: 'Ausrichtung',
   'Stud down': 'Zapfen unten',
   'Top face down': 'Oberseite unten',
+  'As drawn, flat on the bed': 'Wie gezeichnet, flach auf dem Bett',
   Material: 'Material',
   'Bed layout': 'Bettbelegung',
-  'Knobs on the bed': 'Drehknöpfe auf dem Bett',
-  'Gap between knobs': 'Abstand der Drehknöpfe',
+  'Copies on the bed': 'Exemplare auf dem Bett',
+  'Gap between copies': 'Abstand der Exemplare',
   Quality: 'Qualität',
   'Layer height': 'Schichthöhe',
   'Wall lines': 'Wandlinien',
@@ -94,7 +117,7 @@ const GERMAN = {
   // Units in screen reader labels
   lines: 'Linien',
   layers: 'Schichten',
-  knobs: 'Drehknöpfe',
+  copies: 'Exemplare',
   grooves: 'Rillen',
 
   // Model warnings
@@ -123,13 +146,18 @@ const GERMAN = {
   'The model has split into {n} separate pieces.':
     'Das Modell ist in {n} einzelne Teile zerfallen.',
 
+  'The sockets are longer than the pipe.': 'Die Muffen sind länger als das Rohr.',
+  'A bend is tighter than the pipe is wide, so the bore gets pinched.':
+    'Eine Biegung ist enger als das Rohr breit ist, die Bohrung wird daher gequetscht.',
+  'The pipe runs into itself.': 'Das Rohr läuft in sich selbst hinein.',
+
   // Slicer messages
   'Slicing…': 'Wird gesliced…',
   'Done.': 'Fertig.',
   'Done: {n} layers.': 'Fertig: {n} Schichten.',
   '{n} × {n} grid, {n} × {n} mm': '{n} × {n} Raster, {n} × {n} mm',
-  'Too many knobs: {n} fit on the bed at this size and gap.':
-    'Zu viele Drehknöpfe: Bei dieser Größe und diesem Abstand passen {n} auf das Bett.',
+  'Too many copies: {n} fit on the bed at this size and gap.':
+    'Zu viele Exemplare: Bei dieser Größe und diesem Abstand passen {n} auf das Bett.',
   'The slicer engine could not be loaded. Run slicer/build.sh to compile it.':
     'Die Slicer-Engine konnte nicht geladen werden. Mit slicer/build.sh lässt sie sich kompilieren.',
 };

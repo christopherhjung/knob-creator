@@ -26,15 +26,15 @@ const option = (value, label = value) => ({ value, label });
 export const SLICER_PARAMS = [
   {
     group: 'Print', key: 'orientation', label: 'Orientation', value: 'stud',
-    options: [option('stud', 'Stud down'), option('top', 'Top face down')],
+    options: [option('stud', 'Stud down'), option('top', 'Top face down'), option('flat', 'As drawn, flat on the bed')],
   },
   {
     group: 'Print', key: 'material', label: 'Material', value: 'PLA',
     options: Object.keys(MATERIALS).map((name) => option(name)), apply: selectMaterial,
   },
 
-  { group: 'Bed layout', key: 'copies', label: 'Knobs on the bed', unit: 'knobs', min: 1, max: 36, step: 1, value: 1 },
-  { group: 'Bed layout', key: 'copyGap', label: 'Gap between knobs', min: 2, max: 30, step: 0.5, value: 5 },
+  { group: 'Bed layout', key: 'copies', label: 'Copies on the bed', unit: 'copies', min: 1, max: 36, step: 1, value: 1 },
+  { group: 'Bed layout', key: 'copyGap', label: 'Gap between copies', min: 2, max: 30, step: 0.5, value: 5 },
 
   { group: 'Quality', key: 'layerHeight', label: 'Layer height', min: 0.08, max: 0.32, step: 0.04, value: 0.2 },
   { group: 'Quality', key: 'wallCount', label: 'Wall lines', unit: 'lines', min: 1, max: 8, step: 1, value: 3 },
@@ -65,6 +65,13 @@ export const SLICER_PARAMS = [
     options: [option('none', 'None'), option('skirt', 'Skirt'), option('brim', 'Brim'), option('raft', 'Raft')],
   },
 ];
+
+/** SLICER_PARAMS with only the orientations a model can be printed in, the first being the default. */
+export const slicerParams = (orientations) => SLICER_PARAMS.map((param) => (param.key !== 'orientation' ? param : {
+  ...param,
+  value: orientations[0],
+  options: param.options.filter((choice) => orientations.includes(choice.value)),
+}));
 
 export const defaultSlicerValues = () =>
   Object.fromEntries(SLICER_PARAMS.map(({ key, value }) => [key, value]));
@@ -192,6 +199,19 @@ export function toEngineSettings(v) {
     support_line_distance: (NOZZLE * 100) / SUPPORT_DENSITY,
     adhesion_type: v.adhesion,
   };
+}
+
+/** Width and depth a mesh takes up on the bed, in mm. */
+export function meshFootprint({ positions }) {
+  const min = [Infinity, Infinity];
+  const max = [-Infinity, -Infinity];
+  for (let i = 0; i < positions.length; i += 3) {
+    for (const axis of [0, 1]) {
+      min[axis] = Math.min(min[axis], positions[i + axis]);
+      max[axis] = Math.max(max[axis], positions[i + axis]);
+    }
+  }
+  return [max[0] - min[0], max[1] - min[1]];
 }
 
 /**

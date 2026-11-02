@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
-  bedLayout, defaultSlicerValues, engineArguments, SLICER_PARAMS, toEngineSettings,
+  bedLayout, defaultSlicerValues, engineArguments, SLICER_PARAMS, slicerParams, toEngineSettings,
 } from '../src/slicer-settings.js';
 
 const settings = (overrides = {}) => toEngineSettings({ ...defaultSlicerValues(), ...overrides });
@@ -174,4 +174,11 @@ test('command line selects the extruder before loading the model', () => {
   assert.equal(args.filter((arg) => arg === '/m.stl').length, 1);
   const layerHeights = args.filter((arg) => arg === 'layer_height=0.2');
   assert.equal(layerHeights.length, 2, 'set on the global and the extruder scope');
+});
+
+test('each model offers only its own orientations', () => {
+  const orientation = (list) => slicerParams(list).find((param) => param.key === 'orientation');
+  assert.deepEqual(orientation(['stud', 'top']).options.map(({ value }) => value), ['stud', 'top']);
+  assert.equal(orientation(['flat']).value, 'flat');
+  assert.equal(settings({ orientation: 'flat' }).mesh_rotation_matrix, '[[1,0,0],[0,1,0],[0,0,1]]');
 });

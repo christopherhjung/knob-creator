@@ -3,6 +3,7 @@ import { beforeEach, test } from 'node:test';
 import { applyConfig, deleteConfig, readConfigs, saveConfig } from '../src/configs.js';
 import { t } from '../src/i18n.js';
 import { defaultValues, PARAMS } from '../src/params.js';
+import { DEFAULT_PATH, PIPE_PARAMS } from '../src/pipe.js';
 import { defaultSlicerValues, SLICER_PARAMS } from '../src/slicer-settings.js';
 
 let stored;
@@ -38,8 +39,31 @@ test('the same name replaces the old configuration', () => {
 test('deleting removes only that configuration', () => {
   saveConfig(config('A'));
   saveConfig(config('B'));
-  deleteConfig('A');
+  deleteConfig({ name: 'A' });
   assert.deepEqual(readConfigs().map(({ name }) => name), ['B']);
+});
+
+test('each model has its own configurations, and old ones are knobs', () => {
+  saveConfig(config('A'));
+  saveConfig({ ...config('A'), type: 'pipe' });
+  assert.equal(readConfigs().length, 2);
+  assert.deepEqual(readConfigs('knob').map(({ type }) => type), [undefined]);
+  assert.deepEqual(readConfigs('pipe').map(({ type }) => type), ['pipe']);
+  deleteConfig({ name: 'A', type: 'pipe' });
+  assert.equal(readConfigs('pipe').length, 0);
+  assert.equal(readConfigs('knob').length, 1);
+});
+
+test('a pipe path loads only when it is a valid path, and as a copy', () => {
+  const path = [[0, 0], [1, 1], [2, 2], [3, 3]];
+  const values = defaultValues(PIPE_PARAMS);
+  applyConfig(values, PIPE_PARAMS, { path });
+  assert.deepEqual(values.path, path);
+  assert.notEqual(values.path, path);
+  for (const damaged of [[[0, 0], [1, 1]], [[0, 0], [1, 1], [2, 2], [3, 'x']], 'path']) {
+    applyConfig(values, PIPE_PARAMS, { path: damaged });
+    assert.deepEqual(values.path, DEFAULT_PATH);
+  }
 });
 
 test('damaged storage does not break the app', () => {

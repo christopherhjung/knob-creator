@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { before, describe, test } from 'node:test';
+import { buildKnob } from '../src/knob.js';
 import { defaultValues } from '../src/params.js';
-import { defaultSlicerValues } from '../src/slicer-settings.js';
+import { buildPipe, PIPE_PARAMS } from '../src/pipe.js';
+import { defaultSlicerValues, meshFootprint } from '../src/slicer-settings.js';
 
 const engineBuilt = existsSync(new URL('../slicer/engine/CuraEngine.wasm', import.meta.url));
 const BED = 210;
@@ -20,8 +22,10 @@ function layers(gcode) {
 }
 
 const span = (points, axis) => {
-  const values = points.map((point) => point[axis]);
-  return [Math.min(...values), Math.max(...values)];
+  // A loop, since spreading a large print's points overflows the stack.
+  let [min, max] = [Infinity, -Infinity];
+  for (const point of points) [min, max] = [Math.min(min, point[axis]), Math.max(max, point[axis])];
+  return [min, max];
 };
 
 describe('compiled engine, default knob', { skip: !engineBuilt && 'run slicer/build.sh first' }, () => {
@@ -29,8 +33,8 @@ describe('compiled engine, default knob', { skip: !engineBuilt && 'run slicer/bu
   let printed;
 
   before(async () => {
-    const { sliceKnob } = await import('../slicer/slice.js');
-    gcode = await sliceKnob();
+    const { sliceMesh } = await import('../slicer/slice.js');
+    gcode = await sliceMesh(buildKnob(defaultValues()));
     printed = layers(gcode);
   });
 
@@ -68,8 +72,8 @@ describe('compiled engine, default knob', { skip: !engineBuilt && 'run slicer/bu
   });
 
   test('places a grid of copies centred on the bed', async () => {
-    const { sliceKnob } = await import('../slicer/slice.js');
-    const fourKnobs = await sliceKnob(defaultValues(), { ...defaultSlicerValues(), copies: 4, copyGap: 5 });
+    const { sliceMesh } = await import('../slicer/slice.js');
+    const fourKnobs = await sliceMesh(buildKnob(defaultValues()), { ...defaultSlicerValues(), copies: 4, copyGap: 5 });
     const midBody = layers(fourKnobs)[60];
     const [minX, maxX] = span(midBody, 0);
     const [minY, maxY] = span(midBody, 1);
@@ -85,5 +89,22 @@ describe('compiled engine, default knob', { skip: !engineBuilt && 'run slicer/bu
     const start = gcode.split('G28')[0];
     assert.match(start, /M190 S60/);
     assert.match(start, /M109 S200/);
+  });
+});
+
+describe('compiled engine, default pipe adapter', { skip: !engineBuilt && 'run slicer/build.sh first' }, () => {
+  test('lies on the bed as drawn, with supports under it', async () => {
+    const { sliceMesh } = await import('../slicer/slice.js');
+    const mesh = buildPipe(defaultValues(PIPE_PARAMS));
+    const gcode = await sliceMesh(mesh, { ...defaultSlicerValues(), orientation: 'flat' });
+    assert.ok(gcode.includes(';TYPE:SUPPORT'));
+
+    const walls = layers(gcode).flat();
+    const [width, depth] = meshFootprint(mesh);
+    const [minX, maxX] = span(walls, 0);
+    const [minY, maxY] = span(walls, 1);
+    // The skirt adds a few mm around it; a turned pipe would swap the two sizes.
+    assert.ok(maxX - minX > width && maxX - minX < width + 12, `width ${maxX - minX} vs ${width}`);
+    assert.ok(maxY - minY > depth && maxY - minY < depth + 12, `depth ${maxY - minY} vs ${depth}`);
   });
 });
