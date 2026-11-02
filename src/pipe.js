@@ -132,14 +132,27 @@ export function buildPipe(p, exact = true) {
   return { positions, indices, volume: volumeOf(positions, indices), warnings, approximate };
 }
 
-/** Outer and inner tube joined by the two end faces. Exact, but only valid while the pipe never touches itself. */
+/**
+ * Outer and inner tube joined by the two end faces, with tight bends trimmed. Valid as
+ * long as two separate stretches of the pipe never overlap.
+ */
 function sweptMesh(samples) {
   const count = samples.length;
-  const vertices = [...samples.flatMap((sample) => ring(sample, sample.R)), ...samples.flatMap((sample) => ring(sample, sample.r))];
-  const outer = (i, j) => i * SEGMENTS + (j % SEGMENTS);
-  const inner = (i, j) => (count + i) * SEGMENTS + (j % SEGMENTS);
+  const points = [...trimmedRings(samples, (sample) => sample.R), ...trimmedRings(samples, (sample) => sample.r)].flat();
+  // Trimming moves runs of vertices onto one spot. Merging those into one vertex lets the
+  // triangles between them vanish, rather than shading as dark slivers with no normal.
+  const vertices = [];
+  const merged = new Map();
+  const vertexOf = points.map((point) => {
+    const key = point.join();
+    if (!merged.has(key)) merged.set(key, vertices.push(point) - 1);
+    return merged.get(key);
+  });
+  const outer = (i, j) => vertexOf[i * SEGMENTS + (j % SEGMENTS)];
+  const inner = (i, j) => vertexOf[(count + i) * SEGMENTS + (j % SEGMENTS)];
   const indices = [];
-  const quad = (a, b, c, d) => indices.push(a, b, c, a, c, d);
+  const triangle = (a, b, c) => { if (a !== b && b !== c && c !== a) indices.push(a, b, c); };
+  const quad = (a, b, c, d) => { triangle(a, b, c); triangle(a, c, d); };
 
   for (let j = 0; j < SEGMENTS; j++) {
     for (let i = 0; i + 1 < count; i++) {
@@ -154,10 +167,74 @@ function sweptMesh(samples) {
 }
 
 /**
- * Unions convex hulls between neighbouring rings, which resolves a pipe running into itself.
- * ponytail: about 200 ms and notches of R·θ²/8 on the outside of bends; only used when the swept mesh would be invalid.
+ * The rings of one surface. Each vertex keeps its side offset d from the centre line, so
+ * along the pipe it traces an offset curve. On the inside of a bend tighter than d, that
+ * curve runs backwards in a loop (a swallowtail) and the surface folds through itself;
+ * cutting the loop at its crossing leaves the crease the real solid has there.
  */
-function unionMesh(samples) {
+function trimmedRings(samples, radius) {
+  const rings = samples.map((sample) => ring(sample, radius(sample)));
+  for (let j = 0; j < SEGMENTS; j++) {
+    const column = rings.map((points) => points[j]);
+    if (trimLoops(column, samples)) column.forEach((point, i) => { rings[i][j] = point; });
+  }
+  return rings;
+}
+
+/** Cuts the loops out of one column of vertices in place. @returns {boolean} whether it ran backwards */
+function trimLoops(column, samples) {
+  const backwards = column.slice(1).some((point, i) =>
+    (point[0] - column[i][0]) * samples[i].tx + (point[1] - column[i][1]) * samples[i].ty < 0);
+  if (!backwards) return false; // only a column running backwards can loop
+
+  // ponytail: O(n²) per folded column, a few ms; a sweep-line search if paths get very long.
+  for (let i = 0; i + 2 < column.length; i++) {
+    // The furthest crossing first, which removes a whole loop at once.
+    for (let k = column.length - 2; k >= i + 2; k--) {
+      const t = crossing(column[i], column[i + 1], column[k], column[k + 1]);
+      if (t === null) continue;
+      const cut = column[i].map((value, axis) => value + (column[i + 1][axis] - value) * t);
+      for (let m = i + 1; m <= k; m++) column[m] = cut;
+      i = k - 1;
+      break;
+    }
+  }
+
+  // Near the threshold the fold spreads across neighbouring columns without closing a loop
+  // in any one of them. A vertex then lies behind a ring plane it already passed, so it
+  // holds still until the rings pass it again.
+  let held = null;
+  for (let i = 1; i < column.length; i++) {
+    const from = held ?? column[i - 1];
+    const ahead = (column[i][0] - from[0]) * samples[i].tx + (column[i][1] - from[1]) * samples[i].ty;
+    if (ahead < 0) {
+      held = from;
+      column[i] = held;
+    } else {
+      held = null;
+    }
+  }
+  return true;
+}
+
+/** Where segment ab crosses segment cd in X/Y, as a fraction along ab, or null. */
+function crossing(a, b, c, d) {
+  const [rx, ry] = [b[0] - a[0], b[1] - a[1]];
+  const [sx, sy] = [d[0] - c[0], d[1] - c[1]];
+  const denominator = rx * sy - ry * sx;
+  if (Math.abs(denominator) < 1e-12) return null;
+  const [qx, qy] = [c[0] - a[0], c[1] - a[1]];
+  const t = (qx * sy - qy * sx) / denominator;
+  const u = (qx * ry - qy * rx) / denominator;
+  return t > 0 && t < 1 && u > 0 && u < 1 ? t : null;
+}
+
+/**
+ * Unions convex hulls between neighbouring rings, which resolves a pipe running into itself.
+ * ponytail: about 200 ms and notches of R·θ²/8 on the outside of bends; only used when
+ * separate stretches of the pipe overlap, where the swept mesh would be invalid.
+ */
+export function unionMesh(samples) {
   const last = samples.length - 1;
   const made = [];
   const keep = (solid) => (made.push(solid), solid);
@@ -194,20 +271,20 @@ function findProblems(p, samples) {
   const length = samples.at(-1).s;
   if (2 * p.socketLength > length - p.extendA - p.extendB) warnings.push('The sockets are longer than the pipe.');
 
-  // Bend radius from the turn between neighbouring tangents.
-  const widest = Math.max(...samples.map((sample) => sample.R));
+  // Bend radius from the turn between neighbouring tangents. Tighter than the outer wall is
+  // fine, it only creases on the inside; tighter than the bore narrows the bore.
+  const widestBore = Math.max(...samples.map((sample) => sample.r));
   const tightest = Math.min(...samples.slice(1).map((sample, i) => {
     const before = samples[i];
     const turn = Math.acos(Math.min(1, before.tx * sample.tx + before.ty * sample.ty));
     return turn > 1e-9 ? (sample.s - before.s) / turn : Infinity;
   }));
-  const pinched = tightest < widest;
-  if (pinched) warnings.push('A bend is tighter than the pipe is wide, so the bore gets pinched.');
+  if (tightest < widestBore) warnings.push('A bend is tighter than the bore, so the bore gets pinched.');
 
   // ponytail: O(n²) over ~40 samples per segment, fine below a few thousand samples.
   const crosses = samples.some((a, i) => samples.slice(i + 1).some((b) =>
     b.s - a.s > 2 * (a.R + b.R) && Math.hypot(a.x - b.x, a.y - b.y) < a.R + b.R));
   if (crosses) warnings.push('The pipe runs into itself.');
 
-  return { warnings, touchesItself: pinched || crosses };
+  return { warnings, touchesItself: crosses };
 }

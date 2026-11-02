@@ -147,8 +147,8 @@ const GERMAN = {
     'Das Modell ist in {n} einzelne Teile zerfallen.',
 
   'The sockets are longer than the pipe.': 'Die Muffen sind länger als das Rohr.',
-  'A bend is tighter than the pipe is wide, so the bore gets pinched.':
-    'Eine Biegung ist enger als das Rohr breit ist, die Bohrung wird daher gequetscht.',
+  'A bend is tighter than the bore, so the bore gets pinched.':
+    'Eine Biegung ist enger als die Bohrung, die Bohrung wird daher eingeengt.',
   'The pipe runs into itself.': 'Das Rohr läuft in sich selbst hinein.',
 
   // Slicer messages

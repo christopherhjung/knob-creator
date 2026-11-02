@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Manifold, Mesh } from '../src/manifold.js';
 import { defaultValues } from '../src/params.js';
-import { bezier, buildPipe, isPath, PIPE_PARAMS, samplePath, splitSegment } from '../src/pipe.js';
+import { bezier, buildPipe, isPath, PIPE_PARAMS, samplePath, splitSegment, unionMesh } from '../src/pipe.js';
 
 const pipe = (overrides = {}) => ({ ...defaultValues(PIPE_PARAMS), ...overrides });
 const straight = [[0, 0], [10, 0], [20, 0], [30, 0]];
@@ -121,4 +121,49 @@ test('each end and its extension follow the handle direction exactly', () => {
   // A control point on its anchor falls back to the next point.
   const [first] = samplePath(pipe({ path: [[0, 0], [0, 0], [0, 20], [30, 20]], extendA: 0 }));
   assert.deepEqual([first.tx, first.ty], [0, 1]);
+});
+
+test('sharp corners are trimmed into a clean crease, fast and without the union', () => {
+  const corners = pipe({ innerA: 20, innerB: 32, path: [[-40, -20], [0, -20], [0, -20], [0, 10], [0, 20], [0, 20], [40, 20]] });
+  const started = performance.now();
+  const mesh = buildPipe(corners, false);
+  assert.ok(performance.now() - started < 100, 'quick enough to drag');
+  assert.equal(mesh.approximate, false);
+  const { positions, indices } = mesh;
+  const vertex = (n) => [positions[n * 3], positions[n * 3 + 1], positions[n * 3 + 2]];
+
+  // No sliver without a normal, which would shade as a dark spike.
+  for (let k = 0; k < indices.length; k += 3) {
+    const [a, b, c] = [indices[k], indices[k + 1], indices[k + 2]].map(vertex);
+    const [u, w] = [b.map((x, m) => x - a[m]), c.map((x, m) => x - a[m])];
+    const area = Math.hypot(u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]) / 2;
+    assert.ok(area > 1e-9, `triangle ${k / 3} has no area`);
+  }
+
+  // A fold would push vertices out of the pipe: every vertex lies within the wall
+  // somewhere along the centre line.
+  const samples = samplePath(corners);
+  for (let n = 0; n < positions.length / 3; n++) {
+    const p = vertex(n);
+    const outside = Math.min(...samples.slice(1).map((b, i) => {
+      const a = samples[i];
+      const [dx, dy] = [b.x - a.x, b.y - a.y];
+      const t = Math.max(0, Math.min(1, ((p[0] - a.x) * dx + (p[1] - a.y) * dy) / (dx * dx + dy * dy || 1)));
+      const distance = Math.hypot(p[0] - a.x - dx * t, p[1] - a.y - dy * t, p[2] - a.z);
+      return distance - (a.R + (b.R - a.R) * t);
+    }));
+    assert.ok(outside < 0.05, `vertex ${n} is ${outside} mm outside the pipe`);
+  }
+
+  const union = unionMesh(samples);
+  const solid = new Manifold(new Mesh({ numProp: 3, vertProperties: positions, triVerts: indices }));
+  const reference = new Manifold(new Mesh({ numProp: 3, vertProperties: union.positions, triVerts: union.indices }));
+  try {
+    assert.equal(solid.status(), 'NoError');
+    assert.equal(solid.genus(), 1);
+    assert.ok(Math.abs(solid.volume() - reference.volume()) < 1e-3 * reference.volume(), `${solid.volume()} vs ${reference.volume()}`);
+  } finally {
+    solid.delete();
+    reference.delete();
+  }
 });
